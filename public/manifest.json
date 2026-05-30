@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "Dynamic UTM & Lead Source Validator",
+  "version": "1.0.0",
+  "description": "Аудит форм, трекинг редиректов и симуляция отправки UTM-меток в n8n/Google Apps Script для B2B.",
+  "permissions": [
+    "tabs",
+    "storage",
+    "webNavigation",
+    "webRequest",
+    "sidePanel"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "action": {
+    "default_popup": "src/popup/index.html"
+  },
+  "side_panel": {
+    "default_path": "src/popup/index.html"
+  },
+  "options_ui": {
+    "page": "src/options/index.html",
+    "open_in_tab": true
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["inject.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
