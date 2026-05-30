@@ -1,29 +1,27 @@
-# Задачи по реализации v2.0: Дополнительный функционал
+# Implementation Tasks v2.0: Advanced Capabilities
 
-- `[x]` **Спринт A: Интерфейс и Инфраструктура**
-  - `[x]` Изменение `manifest.json` (добавление `"sidePanel"`, регистрация Side Panel и `inject.js` как `web_accessible_resources`)
-  - `[x]` Настройка Service Worker (`service-worker.js`) для открытия боковой панели по клику
-  - `[x]` Обновление Zustand-стора (`store.js`) для поддержки White Label, PII-ключей и статуса аналитики
-  - `[x]` Модификация страницы настроек (`Options.jsx`): добавление формы White Label, кастомных PII-масок и сжатия логотипа через Canvas
-  - `[x]` Модификация попапа (`Popup.jsx`): вывод данных White Label в PDF-отчет, кнопка «Сгенерировать UTM», кнопка подсветки форм в Data Tree
-- `[x]` **Спринт B: Интерактивный DOM и Автоматизация**
-  - `[x]` Добавление обработчика `HIGHLIGHT_FORM` в `content.js` для прокрутки и мерцающей фиолетовой подсветки
-- `[x]` **Спринт C: Диагностика счетчиков и Безопасность**
-  - `[x]` Создание `public/inject.js` для проверки переменных аналитики (GTM, GA4, YM, fbq, ttq, _hsq)
-  - `[x]` Интеграция инжекта скрипта и приемщика событий `ANALYTICS_DIAGNOSTICS` в `content.js`
-  - `[x]` Реализация гибкого PII-маскирования в `content.js` (с учетом кастомных ключей из настроек)
-  - `[x]` Добавление и запуск unit-тестов в `test_health_score.js`
-- `[x]` **Спринт D: Фирменный ребрендинг OTReniX**
-  - `[x]` Реколоринг `Options.jsx` (замена всех indigo-классов на синие и бирюзовые)
-  - `[x]` Обновление цвета интерактивной подсветки форм и всплывающих алертов в `content.js`
-  - `[x]` Тонкая настройка стилей A4 PDF отчета под градиенты OTReniX в `Popup.jsx`
-  - `[x]` Валидация сборки (`npm run build`)
-  - `[x]` Проверка работоспособности тестов (`node test_health_score.js`)
-- `[x]` **Спринт E: Оптимизация детекции отложенной (lazy-loaded) аналитики**
-  - `[x]` Добавление слушателей пользовательских взаимодействий в `public/inject.js` (scroll, click, mousemove, keydown, touchstart) для повторного сканирования
-  - `[x]` Добавление двусторонней связи (`TRIGGER_INJECTED_SCAN` и `ANALYTICS_DIAGNOSTICS`) для опроса состояния Main World на лету
-  - `[x]` Корректировка логики определения `detected` в `src/popup/Popup.jsx` (включая PDF-отчёт) — если скрипт инициализирован, то он автоматически считается найденным
-  - `[x]` Реализация низкоуровневого перехвата сетевых запросов (`fetch`, `xhr`, `sendBeacon`) в `inject.js`
-  - `[x]` Добавление фонового мониторинга исходящего веб-трафика (`chrome.webRequest.onBeforeRequest`) в `service-worker.js` с синхронизацией данных и сбросом при переходах
-
-
+- `[x]` **Sprint A: User Interface & Infrastructure**
+  - `[x]` Update `manifest.json` (add `"sidePanel"`, register the Side Panel page and list `inject.js` under `web_accessible_resources`)
+  - `[x]` Configure Service Worker (`service-worker.js`) to open the side panel when the action icon is clicked
+  - `[x]` Update the Zustand store (`store.js`) to support White Label configurations, PII keys, and analytics statuses
+  - `[x]` Modify Options Page (`Options.jsx`): design the White Label branding inputs, custom PII filters, and client-side canvas logo compression
+  - `[x]` Modify Popup (`Popup.jsx`): output White Label branding into PDF reports, implement the "Generate UTM" URL injector, and add form highlighting buttons in the Data Tree
+- `[x]` **Sprint B: Interactive DOM Elements**
+  - `[x]` Add a `HIGHLIGHT_FORM` message handler to `content.js` to scroll to forms and apply temporary glowing purple highlights
+- `[x]` **Sprint C: Analytics Diagnostics & Privacy Security**
+  - `[x]` Create `public/inject.js` to check for window analytics properties (GTM, GA4, YM, fbq, ttq, _hsq)
+  - `[x]` Integrate script injection hooks and custom event listeners for `ANALYTICS_DIAGNOSTICS` inside `content.js`
+  - `[x]` Implement configurable PII masking inside `content.js` (accounting for custom keys in settings)
+  - `[x]` Append and verify unit tests in `test_health_score.js`
+- `[x]` **Sprint D: Premium OTReniX Visual Branding**
+  - `[x]` Recolor `Options.jsx` (map former indigo classes to sleek blue and cyan colors)
+  - `[x]` Update highlight visual colors and sandbox alert styling in `content.js`
+  - `[x]` Fine-tune PDF A4 document styling with customized OTReniX gradient palettes in `Popup.jsx`
+  - `[x]` Validate compilation via `npm run build`
+  - `[x]` Execute tests (`node test_health_score.js`) to confirm all checks remain green
+- `[x]` **Sprint E: Lazy-Loaded Analytics Detection Optimization**
+  - `[x]` Add user interaction event listeners (scroll, click, mousemove, keydown, touchstart) in `public/inject.js` to trigger rescans
+  - `[x]` Implement two-way message passing (`TRIGGER_INJECTED_SCAN` and `ANALYTICS_DIAGNOSTICS`) to query Main World states on the fly
+  - `[x]` Adjust `detected` state logic in `src/popup/Popup.jsx` (including PDF report templates) so initialized scripts are automatically marked as found
+  - `[x]` Implement low-level hooks on network requests (`fetch`, `xhr`, `sendBeacon`) inside `inject.js`
+  - `[x]` Implement background traffic logging via `chrome.webRequest.onBeforeRequest` inside `service-worker.js` with data synchronization and cache invalidation on navigation

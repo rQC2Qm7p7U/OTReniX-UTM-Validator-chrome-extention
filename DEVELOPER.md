@@ -1,41 +1,41 @@
-# Руководство разработчика: Dynamic UTM & Lead Source Validator
+# Developer Guide: Dynamic UTM & Lead Source Validator
 
-Этот документ описывает внутреннюю архитектуру, логику работы, потоки данных и особенности реализации расширения Chrome **Dynamic UTM & Lead Source Validator**. Руководство предназначено для разработчиков, которые будут развивать, тестировать или внедрять данное расширение.
+This document describes the internal architecture, workflow logic, data streams, and implementation details of the **Dynamic UTM & Lead Source Validator** Chrome extension. This guide is intended for developers who will extend, test, or implement this extension.
 
 ---
 
-## 🏗 Архитектура и взаимодействие компонентов
+## 🏗 Architecture and Component Interaction
 
-Приложение спроектировано по модульному принципу на базе **Manifest V3**. Оно состоит из трех изолированных сред выполнения:
-1. **Content Script** (Контекст веб-страницы).
-2. **Background Script / Service Worker** (Фоновый контекст расширения).
-3. **Popup & Options Pages** (Контекст интерфейса на React).
+The application is designed modularly based on **Manifest V3**. It consists of three isolated execution environments:
+1. **Content Script** (Context of the web page).
+2. **Background Script / Service Worker** (Background context of the extension).
+3. **Popup & Options Pages** (React-based user interface context).
 
-Общая схема взаимодействия и обмена сообщениями представлена ниже:
+The general architecture and message passing scheme is illustrated below:
 
 ```mermaid
 graph TD
-    %% Компоненты
-    subgraph PageContext ["Контекст веб-страницы"]
+    %% Components
+    subgraph PageContext ["Web Page Context"]
         CS["Content Script (content.js)"]
         Forms["HTML Forms (Shadow DOM & Iframe)"]
         Storage["Storage & Cookies (localStorage, cookies)"]
         DOMObs["MutationObserver (SPA tracking)"]
     end
 
-    subgraph BackgroundContext ["Фоновый контекст (Service Worker)"]
+    subgraph BackgroundContext ["Background Context (Service Worker)"]
         SW["Service Worker (service-worker.js)"]
         RedirectTrack["webRequest.onBeforeRedirect Tracker"]
-        SessionStore["sessionStore (Redirect chain & Page data кэш)"]
+        SessionStore["sessionStore (Redirect chain & Page data cache)"]
     end
 
-    subgraph UIContext ["React UI Контекст"]
+    subgraph UIContext ["React UI Context"]
         Popup["Popup (Popup.jsx)"]
         Options["Options (Options.jsx)"]
         Store["Zustand Store (store.js)"]
     end
 
-    %% Взаимодействия
+    %% Interactions
     DOMObs -->|DOM Changes| CS
     CS -->|1. Scan DOM & Storage| Forms
     CS -->|Read values| Storage
@@ -56,121 +56,121 @@ graph TD
 
 ---
 
-## 📁 Структура каталогов и назначение файлов
+## 📁 Directory Structure and File Guide
 
 ```text
 /UTM-Validator
-  ├── manifest.json                  # Конфигурация Manifest V3 (права доступа, пути скриптов)
-  ├── vite.config.js                  # Конфигурация Vite с алиасом html2canvas-pro и мульти-входами
-  ├── package.json                   # Зависимости проекта (React 19, Zustand, html2pdf.js, Tailwind v4)
-  ├── test_health_score.js           # Автономные Unit-тесты алгоритма Health Score
+  ├── manifest.json                  # Manifest V3 configuration (permissions, script paths)
+  ├── vite.config.js                  # Vite config with html2canvas-pro alias and multi-entry points
+  ├── package.json                   # Project dependencies (React 19, Zustand, html2pdf.js, Tailwind v4)
+  ├── test_health_score.js           # Unit tests for the Health Score algorithm
   ├── src/
-  │   ├── index.css                  # Глобальные стили Tailwind v4 + кастомный Glassmorphic дизайн
+  │   ├── index.css                  # Tailwind v4 styles + custom Glassmorphic design
   │   ├── background/
-  │   │   └── service-worker.js      # Фоновый процесс: перехват редиректов, агрегация фреймов, CORS-прокси
+  │   │   └── service-worker.js      # Background script: redirect hooks, frame aggregation, CORS proxy
   │   ├── content/
-  │   │   └── content.js             # Контент-скрипт: обход Shadow DOM, MutationObserver, Sandbox-перехват
+  │   │   └── content.js             # Content script: Shadow DOM traversal, MutationObserver, Sandbox intercept
   │   ├── popup/
-  │   │   ├── index.html             # Точка входа HTML для Popup
-  │   │   ├── main.jsx               # Точка входа React для Popup
-  │   │   ├── store.js               # Zustand-стор расширения с математикой Health Score
-  │   │   └── Popup.jsx              # Реализация дашборда, Data Tree, Sandbox и PDF/MD экспорта
+  │   │   ├── index.html             # HTML entry point for Popup
+  │   │   ├── main.jsx               # React entry point for Popup
+  │   │   ├── store.js               # Zustand store containing Health Score calculations
+  │   │   └── Popup.jsx              # UI Dashboard, Data Tree, Sandbox, and PDF/MD export layouts
   │   └── options/
-  │       ├── index.html             # Точка входа HTML для Options Page
-  │       ├── main.jsx               # Точка входа React для Options Page
-  │       └── Options.jsx            # Страница настроек кастомных ключей и логов вебхуков
+  │       ├── index.html             # HTML entry point for Options Page
+  │       ├── main.jsx               # React entry point for Options Page
+  │       └── Options.jsx            # Settings page for custom parameters and webhook logs
 ```
 
 ---
 
-## 🔄 Детальное описание ключевых процессов
+## 🔄 In-Depth Workflows
 
-### 1. Сканирование DOM и Shadow DOM (Content Script)
-Процесс сканирования запускается автоматически при загрузке DOM (`DOMContentLoaded`), при динамических изменениях страницы через `MutationObserver` (с дебаунсом 300мс во избежание фризов интерфейса) и по ручному запросу из Popup (`TRIGGER_MANUAL_SCAN`).
+### 1. DOM and Shadow DOM Scanning (Content Script)
+The scanning process starts automatically when the DOM is loaded (`DOMContentLoaded`), upon dynamic DOM modifications via `MutationObserver` (debounced at 300ms to prevent interface lags), and by manual request from the Popup (`TRIGGER_MANUAL_SCAN`).
 
-* **Обход Shadow DOM:** Обычный `document.querySelectorAll` не проникает внутрь Shadow DOM. Метод `scanShadowDOM` рекурсивно проверяет каждое свойство `shadowRoot` у всех элементов на странице, извлекая формы и инпуты.
-* **Поддержка Iframe (`all_frames: true`):** Контентный скрипт внедряется во все фреймы на странице. Главный фрейм собирает куки и локальное хранилище страницы, а подфреймы сканируют свой локальный DOM и отправляют отчеты в Service Worker. Service Worker склеивает формы подфреймов, помечая их флагом `isIframe: true`.
-
----
-
-### 2. Отслеживание редиректов (Background Script)
-Сквозная аналитика часто ломается из-за некорректных серверных редиректов (например, переход с `http` на `https` или сброс слэша в конце URL), стирающих параметры запроса.
-
-* **Захват:** Скрипт слушает события `chrome.webRequest.onBeforeRedirect`, извлекая цепочку редиректов и записывая их в сессионный кэш `redirects_{tabId}`.
-* **Очистка кэша:** Для предотвращения накопления мусора при переходах пользователя на новые сайты, скрипт слушает событие `chrome.webNavigation.onCommitted`. Если переход совершен напрямую (не является редиректом), цепочка редиректов для данной вкладки очищается.
+* **Shadow DOM Traversal:** Standard `document.querySelectorAll` does not inspect elements inside the Shadow DOM. The recursive `scanShadowDOM` function checks the `shadowRoot` property of all page elements, pulling out forms and inputs.
+* **Iframe Support (`all_frames: true`):** The content script is injected into every frame on the page. The top-level frame reads page cookies and local storage, while subframes inspect their local DOM and report findings to the Service Worker. The Service Worker aggregates subframe forms, marking them as `isIframe: true`.
 
 ---
 
-### 3. Режим Sandbox Mode 2.0 (Перехват отправки лидов)
-Предназначен для стресс-тестирования отправки форм на n8n/GAS без риска отправки дублирующих лидов в основную CRM клиента.
+### 2. Redirect Tracking (Background Script)
+Lead attribution frequently fails due to server-side redirects (e.g., HTTP to HTTPS or trailing slash normalization) stripping query parameters.
+
+* **Capture:** The service worker hooks into `chrome.webRequest.onBeforeRedirect`, storing redirect hops in the session cache (`redirects_{tabId}`).
+* **Cache Expiry:** To avoid memory leaks as users browse between different sites, the script listens to `chrome.webNavigation.onCommitted`. If navigation is direct (not a redirect), the redirect chain cache is cleared for that tab.
+
+---
+
+### 3. Sandbox Mode 2.0 (Form Submission Interception)
+Designed for stress-testing form submits to n8n/GAS without polluting the client's production CRM with mock leads.
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor User as Пользователь (Маркетолог)
-    participant Form as HTML Форма на странице
+    actor User as User (Marketer)
+    participant Form as HTML Form on page
     participant CS as Content Script
     participant SW as Service Worker
     participant Webhook as n8n Webhook / GAS
 
-    User->>Form: Заполняет форму и жмет "Отправить"
-    Form->>CS: Событие submit (Capture phase)
-    Note over CS: Sandbox Mode активен? (Да)
+    User->>Form: Fills form and clicks "Submit"
+    Form->>CS: submit event (Capture phase)
+    Note over CS: Sandbox Mode enabled? (Yes)
     CS->>Form: event.preventDefault() & event.stopPropagation()
-    Note over Form: Реальная отправка заблокирована
-    CS->>CS: Парсинг полей формы + сбор Cookie/LocalStorage
-    CS->>SW: Сообщение SIMULATE_WEBHOOK_SUBMIT
-    CS->>User: Показ всплывающего тоста на странице
-    Note over SW: Чтение Webhook URL из chrome.storage.sync
-    SW->>Webhook: HTTP POST (payload: данные формы, куки, UTM)
-    Webhook-->>SW: Ответ HTTP 200 OK (или ошибка)
-    SW->>SW: Запись ответа в chrome.storage.local (webhookLogs)
-    SW->>UI: Сообщение WEBHOOK_SUBMITTED_LOG (реактивное обновление)
+    Note over Form: Actual submission blocked
+    CS->>CS: Parse inputs + gather Cookie/LocalStorage
+    CS->>SW: SIMULATE_WEBHOOK_SUBMIT message
+    CS->>User: Render confirmation toast on page
+    Note over SW: Retrieve Webhook URL from chrome.storage.sync
+    SW->>Webhook: HTTP POST (payload: form data, cookies, UTMs)
+    Webhook-->>SW: HTTP 200 OK (or error response)
+    SW->>SW: Write response to chrome.storage.local (webhookLogs)
+    SW->>UI: WEBHOOK_SUBMITTED_LOG message (reactive state update)
 ```
 
 ---
 
-### 4. Алгоритм Health Score и Штрафных баллов (Zustand Store)
-Здоровье страницы рассчитывается динамически на основе формулы:
+### 4. Health Score & Penalty Algorithm (Zustand Store)
+The page health metric is calculated dynamically using this formula:
 
 $$S = \max \left(0, 100 - \sum_{i=1}^{n} (w_i \cdot c_i) \right)$$
 
-Веса штрафов ($w_i$) зафиксированы в [store.js](file:///Users/nata/Desktop/Леонид%20Временная/UTM%20Validator/src/popup/store.js):
-* **🔴 Critical (-40):** Метки есть в URL, но отсутствуют в DOM-формах и в Storage.
-* **🔴 Critical (-40):** Редирект стёр UTM-параметры до момента открытия целевой страницы.
-* **🟠 High (-30):** Метки в формах есть, но при отправке Sandbox Mode передает их пустыми.
-* **🟡 Medium (-15):** В URL меток нет, но и формы не подготовлены к их приёму (нет скрытых полей).
-* **🔵 Blue (-10):** Отсутствуют основные куки веб-аналитики (`_ga`, `_ym_uid`), хотя скрипты подключены.
+Penalty weights ($w_i$) are defined in [store.js](src/popup/store.js):
+* **🔴 Critical (-40):** UTMs exist in URL but are missing from DOM forms and storage.
+* **🔴 Critical (-40):** Redirect chain stripped UTM parameters before the page loaded.
+* **🟠 High (-30):** Hidden fields are present, but Sandbox Mode transmits them empty.
+* **🟡 Medium (-15):** No UTMs in URL, and forms lack hidden inputs/slots to capture them.
+* **🔵 Blue (-10):** Core web analytics cookies (`_ga`, `_ym_uid`) are missing, though script blocks exist.
 
 ---
 
-### 5. Логика PDF-генерации (Off-Screen Canvas)
-Экспорт PDF-отчетов реализован через `html2pdf.js` с использованием библиотеки `html2canvas-pro` (вместо стандартной), чтобы исключить краш при разборе цветов `oklch()`, применяемых в Tailwind CSS v4.
+### 5. PDF Generation Details (Off-Screen Canvas)
+PDF exports are compiled via `html2pdf.js` with `html2canvas-pro` (a customized fork) to prevent crashes when processing modern Tailwind CSS v4 HSL/OKLCH color space notations.
 
-Для исключения влияния на основной Popup, элемент шаблона отчета отрендерен на абсолютных координатах вне экрана:
+To avoid layout shift issues in the popup, the report canvas is rendered at absolute coordinates off-screen:
 ```html
 <div style={{ position: 'absolute', left: '-9999px', top: '0px', width: '210mm', overflow: 'hidden' }}>
   <div ref={reportRef} className="bg-slate-950 p-8 ...">
-    <!-- Шаблон А4 отчета -->
+    <!-- A4 PDF Template -->
   </div>
 </div>
 ```
-Это позволяет браузеру рассчитать геометрию элементов для PDF, но скрывает его от пользователя интерфейса расширения.
+This lets the browser resolve element geometry for PDF pages while keeping the template completely hidden from popup users.
 
 ---
 
-## 🛠 Порядок сборки и отладки
+## 🛠 Compilation and Debugging
 
-1. Установите зависимости:
+1. Install dependencies:
    ```bash
    npm install
    ```
-2. Запустите тесты бизнес-логики Health Score:
+2. Run health score logic unit tests:
    ```bash
    npm run test
    ```
-3. Соберите проект:
+3. Compile the production extension bundle:
    ```bash
    npm run build
    ```
-   Скомпилированные файлы появятся в папке `dist/` в корне проекта. Загрузите её как unpacked-расширение в Chrome.
+   Compiled assets will be placed in the `dist/` directory. Load this directory as an unpacked extension in Chrome.

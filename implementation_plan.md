@@ -1,49 +1,49 @@
-# План реализации v2.0: Дополнительный функционал и масштабирование
+# Implementation Plan v2.0: Advanced Features & Scaling
 
-Этот документ представляет собой пошаговый технический план модернизации расширения **Dynamic UTM & Lead Source Validator** до версии 2.0. План описывает внедрение дополнительных UX/UI возможностей, брендирования отчетов, интерактивного взаимодействия с DOM веб-страниц, проверки счетчиков аналитики и обеспечения безопасности персональных данных.
+This document presents a step-by-step technical plan for upgrading the **Dynamic UTM & Lead Source Validator** extension to version 2.0. The plan covers the implementation of advanced UI/UX capabilities, report branding, interactive DOM highlighting, analytics tag validation, and PII protection.
 
 ---
 
 ## User Review Required
 
 > [!IMPORTANT]
-> **Разрешения Manifest V3 (Side Panel):** Для включения поддержки боковой панели потребуется добавить разрешение `"sidePanel"` в `manifest.json`. Мы настроим поведение так, чтобы при клике на иконку открывалась Side Panel (она удобнее при параллельной работе с формами сайта), однако это меняет стандартный вид всплывающего окна (Popup).
+> **Manifest V3 Permissions (Side Panel):** To enable side panel support, we will add the `"sidePanel"` permission in `manifest.json`. We will configure the action click handler to open the side panel (which is more convenient for inspecting forms in parallel with the webpage layout), but note that this replaces the standard browser action Popup.
 > 
-> **Внедрение скрипта в Main World (MAIN):** Для точной диагностики инициализации JS-счетчиков аналитики (Google Tag Manager `window.dataLayer`, Яндекс.Метрика `ym`) нам необходимо обойти изоляцию Content Script. Мы создадим файл `inject.js`, внедряемый напрямую в контекст страницы (`world: "MAIN"`), что потребует согласования CSP на сайтах клиентов.
+> **Main World Script Injection (MAIN):** For accurate diagnostics of analytical JS trackers (Google Tag Manager `window.dataLayer`, Yandex.Metrica `ym`), we need to bypass the content script execution isolation. We will create an `inject.js` script injected directly into the page context (`world: "MAIN"`), which may require CSP configurations on target sites.
 
 > [!WARNING]
-> **Хранение логотипов White Label:** Ограничение `chrome.storage.sync` на размер одного ключа составляет 8 КБ. Мы реализуем сжатие загружаемого логотипа через HTML5 Canvas до максимального разрешения 120x60 пикселей перед кодированием в Base64, чтобы гарантировать сохранение настроек брендинга.
+> **White Label Logo Storage:** The maximum size of a single key in `chrome.storage.sync` is 8 KB. We will implement client-side image compression via HTML5 Canvas to downscale the uploaded logo to a maximum of 120x60 pixels before encoding to Base64 to ensure it saves successfully to storage settings.
 
 ---
 
 ## Open Questions
 
 > [!NOTE]
-> **1. Спектр детектируемых пикселей и трекеров:**
-> Достаточно ли проверять инициализацию GTM, GA4 и Яндекс.Метрики? Предлагается добавить также поддержку Facebook Pixel (`fbq`), TikTok Pixel (`ttq`) и HubSpot Tracking (`_hsq`).
+> **1. Scope of Detected Pixels and Trackers:**
+> Is checking for GTM, GA4, and Yandex.Metrica sufficient? We propose adding support for Facebook Pixel (`fbq`), TikTok Pixel (`ttq`), and HubSpot Tracking (`_hsq`).
 > 
-> **2. Уровень маскирования PII:**
-> Предлагается полностью заменять маской `***` поля паролей (`password`, `pwd`) и кредитных карт (`card`, `cvv`, `cc_`). Поля E-mail и телефона маскировать частично (например, `t***s@domain.com`, `+7***12`). Нужна ли возможность гибкой настройки масок пользователем?
+> **2. PII Masking Strength:**
+> We propose replacing sensitive input fields (e.g., fields matching `password`, `pwd`, `card`, `cvv`, `cc_`) entirely with `***`. Fields like email and phone can be partially masked (e.g., `t***s@domain.com`, `+1***555`). Should we provide users with customizable masking patterns?
 
 ---
 
 ## Proposed Changes
 
-Предлагается внести изменения в 6 существующих файлов и создать 1 новый скрипт.
+We propose modifying 6 existing files and creating 1 new script.
 
 ---
 
-### Component 1: UI & Side Panel (Интерфейс, боковая панель и настройки)
+### Component 1: UI & Side Panel (Interface, Side Panel & Settings)
 
-#### [MODIFY] [manifest.json](file:///Users/nata/Desktop/Леонид%20Временная/UTM%20Validator/public/manifest.json)
-- Добавление разрешения `"sidePanel"` в секцию `"permissions"`.
-- Регистрация боковой панели:
+#### [MODIFY] [manifest.json](public/manifest.json)
+- Add `"sidePanel"` permission to the `"permissions"` array.
+- Register the side panel layout:
   ```json
   "side_panel": {
     "default_path": "src/popup/index.html"
   }
   ```
-- Регистрация скрипта `inject.js` как ресурса, доступного для веб-страниц:
+- Register the `inject.js` file as a web accessible resource:
   ```json
   "web_accessible_resources": [
     {
@@ -53,31 +53,31 @@
   ]
   ```
 
-#### [MODIFY] [service-worker.js](file:///Users/nata/Desktop/Леонид%20Временная/UTM%20Validator/src/background/service-worker.js)
-- Настройка дефолтного поведения при клике на иконку расширения: открывать Side Panel, если API поддерживается:
+#### [MODIFY] [service-worker.js](src/background/service-worker.js)
+- Configure the default action behavior to open the side panel when clicked:
   ```javascript
   if (chrome.sidePanel) {
     chrome.sidePanel
       .setPanelBehavior({ openPanelOnActionClick: true })
-      .catch((error) => console.error("Ошибка активации Side Panel:", error));
+      .catch((error) => console.error("Side Panel activation error:", error));
   }
   ```
-- Расширение логики проксирования вебхуков: запись и маскирование логов перед сохранением в `chrome.storage.local`.
+- Extend the webhook forwarding logic to record and mask payloads before saving to `chrome.storage.local`.
 
-#### [MODIFY] [store.js](file:///Users/nata/Desktop/Леонид%20Временная/UTM%20Validator/src/popup/store.js)
-- Расширение состояния (State) в Zustand:
-  - `whiteLabel`: объект `{ agencyName: '', email: '', phone: '', website: '', logoBase64: '' }`
-  - `analyticsStatus`: объект `{ gtm: false, ga4: false, ym: false }`
-- Добавление действий (Actions):
-  - `setWhiteLabel(data)` — сохранение брендинга в `chrome.storage.sync`.
-  - `setAnalyticsStatus(status)` — обновление статусов счетчиков с пересчетом Health Score.
-- Обновление функции `calculateHealthScore`: добавление штрафа `-10 баллов` за каждый неинициализированный счетчик, если на странице есть соответствующие скрипты.
+#### [MODIFY] [store.js](src/popup/store.js)
+- Expand the Zustand store state:
+  - `whiteLabel`: branding object `{ agencyName: '', email: '', phone: '', website: '', logoBase64: '' }`
+  - `analyticsStatus`: tracking status `{ gtm: false, ga4: false, ym: false }`
+- Add Zustand actions:
+  - `setWhiteLabel(data)` — saves white label branding data to `chrome.storage.local`.
+  - `setAnalyticsStatus(status)` — updates trackers and re-runs `calculateHealthScore`.
+- Update `calculateHealthScore`: deduct `-10 points` for each uninitialized analytics script detected in the page DOM.
 
-#### [MODIFY] [Options.jsx](file:///Users/nata/Desktop/Леонид%20Временная/UTM%20Validator/src/options/Options.jsx)
-- Верстка секции **Брендинг отчетов (White Label)**:
-  - Текстовые поля: Название агентства, Контакты (Email, Телефон, Сайт).
-  - Элемент загрузки логотипа: `<input type="file" accept="image/*" />`.
-  - Реализация функции сжатия на клиенте:
+#### [MODIFY] [Options.jsx](src/options/Options.jsx)
+- Build the **White Label Branding** settings interface:
+  - Add text fields for Agency Name, Email, Phone, and Website.
+  - Add a file input element: `<input type="file" accept="image/*" />`.
+  - Implement client-side logo compression:
     ```javascript
     const resizeLogo = (file) => {
       const reader = new FileReader();
@@ -87,7 +87,7 @@
           const canvas = document.createElement('canvas');
           let width = img.width;
           let height = img.height;
-          // Ограничиваем до 120x60px сохраняя пропорции
+          // Scale to 120x60px preserving aspect ratio
           const maxW = 120;
           const maxH = 60;
           if (width > maxW || height > maxH) {
@@ -100,7 +100,7 @@
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
           const compressedBase64 = canvas.toDataURL('image/png');
-          // Сохраняем в Zustand / Chrome Sync
+          // Save in Zustand / Chrome Sync
         };
         img.src = e.target.result;
       };
@@ -108,45 +108,45 @@
     };
     ```
 
-#### [MODIFY] [Popup.jsx](file:///Users/nata/Desktop/Леонид%20Временная/UTM%20Validator/src/popup/Popup.jsx)
-- Интеграция параметров `whiteLabel` в скрытый HTML-шаблон `reportRef`.
-  - Логотип отображается в шапке отчета (если загружен).
-  - Контакты агентства рендерятся в футере PDF-листа А4.
-- Добавление кнопки **«Сгенерировать UTM»** в секцию URL на вкладке Dashboard:
-  - Метод дописывает к URL текущей вкладки тестовые параметры (`?utm_source=google&utm_medium=cpc&utm_campaign=test_campaign&gclid=test_gclid_123`) и перезагружает ее.
-- Добавление кнопки-иконки «Глаз» (Подсветить форму) в компоненте рендеринга Data Tree:
-  - При клике шлется сообщение `HIGHLIGHT_FORM` с `formIndex` в активную вкладку.
+#### [MODIFY] [Popup.jsx](src/popup/Popup.jsx)
+- Integrate `whiteLabel` configuration details into the off-screen PDF template (`reportRef`).
+  - Render the custom logo in the report header (if loaded).
+  - Print the agency's contact information in the PDF A4 footer.
+- Add a **"Generate UTM"** button to the URL section of the Dashboard tab:
+  - This method appends dummy parameters (`?utm_source=google&utm_medium=cpc&utm_campaign=test_campaign&gclid=test_gclid_123`) to the tab URL and refreshes the tab.
+- Add a "Highlight Form" (Eye icon) button in the Data Tree tab:
+  - This sends a `HIGHLIGHT_FORM` action containing the `formIndex` to the active tab.
 
 ---
 
-### Component 2: DOM & Diagnostics (Сканер DOM, инжектор счетчиков и маскирование)
+### Component 2: DOM & Diagnostics (DOM Scanner, Tag Injector & Masking)
 
-#### [MODIFY] [content.js](file:///Users/nata/Desktop/Леонид%20Временная/UTM%20Validator/src/content/content.js)
-- Добавление слушателя событий для `HIGHLIGHT_FORM`:
-  - Находит целевую форму по индексу.
-  - Делает плавную прокрутку `scrollIntoView({ behavior: 'smooth', block: 'center' })`.
-  - Добавляет временные CSS-стили подсветки: фиолетовая неоновая рамка (`outline: 4px solid #6366f1`, `box-shadow: 0 0 25px rgba(99, 102, 241, 0.8)`) на 2.5 секунды.
-- Внедрение `inject.js` в DOM при запуске:
+#### [MODIFY] [content.js](src/content/content.js)
+- Add a runtime listener for `HIGHLIGHT_FORM`:
+  - Locate the target form element by index.
+  - Smooth-scroll to the form via `scrollIntoView({ behavior: 'smooth', block: 'center' })`.
+  - Toggle temporary CSS highlight styling: apply a neon indigo outline (`outline: 4px solid #6366f1`, `box-shadow: 0 0 25px rgba(99, 102, 241, 0.8)`) for 2.5 seconds.
+- Inject `inject.js` into the page DOM during load:
   ```javascript
-  if (window.self === window.top) { // Только в главном окне
+  if (window.self === window.top) { // Top frame only
     const script = document.createElement('script');
     script.src = chrome.runtime.getURL('inject.js');
     script.onload = () => script.remove();
     (document.head || document.documentElement).appendChild(script);
   }
   ```
-- Добавление слушателя CustomEvent `ANALYTICS_DIAGNOSTICS` от инжектированного скрипта, передающего статус инициализации переменных `window.dataLayer`, `window.ym` и т.д.
-- Маскирование PII в обработчике `handleSubmit`:
-  - Регулярные выражения для детекции полей паролей, кредитных карт и CVV.
-  - Значения этих полей заменяются на строку `***` до того, как payload будет отправлен в Service Worker и вебхук n8n.
+- Receive `ANALYTICS_DIAGNOSTICS` CustomEvents from the page context transmitting script variables state (`window.dataLayer`, `window.ym`, etc.).
+- Mask PII parameters inside the `handleSubmit` event proxy:
+  - Test field names against regex matching passwords, card numbers, and CVVs.
+  - Mask sensitive values as `***` before posting the payload payload to the Service Worker and the webhook receiver.
 
-#### [NEW] [inject.js](file:///Users/nata/Desktop/Леонид%20Временная/UTM%20Validator/public/inject.js)
-*Примечание: скрипт компилируется Vite или копируется напрямую в папку сборки `public/`*
-- Опрашивает контекст страницы (Main World) каждые 500мс (интервал до 3 секунд):
-  - `window.google_tag_manager` и `window.dataLayer` (GTM).
+#### [NEW] [inject.js](public/inject.js)
+*Note: Compiled via Vite or copied directly into the public distribution path.*
+- Inspect the page context variables (Main World) periodically (every 500ms for 3s):
+  - `window.google_tag_manager` and `window.dataLayer` (GTM).
   - `window.gtag` (Google Analytics).
-  - `window.ym` (Яндекс.Метрика).
-- Отправляет результат в Content Script через кастомное событие:
+  - `window.ym` (Yandex.Metrica).
+- Dispatches findings to the Content Script sandbox via a CustomEvent:
   ```javascript
   document.dispatchEvent(new CustomEvent('ANALYTICS_DIAGNOSTICS', {
     detail: {
@@ -162,25 +162,25 @@
 ## Verification Plan
 
 ### Automated Tests
-1. **Тест маскирования PII:**
-   - Добавить тесты в `test_health_score.js` (или отдельный файл тестов), проверяющие функцию очистки данных формы.
-   - Assert, что при наличии полей `password`, `cvv`, `card_number` their исходные значения в JSON заменяются на `***`.
-2. **Тест размера логотипа:**
-   - Проверка функции компрессии: при подаче изображения размером 1 МБ на выходе получается Base64 строка объемом менее 8 КБ.
+1. **PII Masking Checks:**
+   - Write tests in `test_health_score.js` (or a dedicated file) to check the form masking utilities.
+   - Assert that field keys matching `password`, `cvv`, or `card_number` are successfully replaced by `***` in the output JSON.
+2. **Logo Compression Checks:**
+   - Verify that supplying a 1MB file to the image resizing canvas outputs a Base64 string smaller than 8KB.
 
 ### Manual Verification
-1. **Проверка боковой панели (Side Panel):**
-   - Открыть любую страницу. Кликнуть на иконку расширения.
-   - Убедиться, что справа открывается устойчивая панель, интерфейс полностью масштабирован по ширине.
-2. **Проверка подсветки форм:**
-   - Открыть страницу с несколькими формами. В Дереве данных кликнуть на значок подсветки формы #2.
-   - Страница должна плавно прокрутиться к форме, вокруг нее должна появиться мигающая неоново-фиолетовая обводка.
-3. **Проверка автозаполнения меток:**
-   - Открыть чистый сайт (без UTM).
-   - В попапе нажать «Сгенерировать UTM». Убедиться, что вкладка перезагрузилась, URL содержит тестовые метки, а Health Score пересчитался.
-4. **Проверка White Label PDF:**
-   - В настройках загрузить файл логотипа и заполнить данные агентства.
-   - Вернуться на дашборд, нажать «Скачать PDF-отчет». Убедиться, что PDF содержит загруженный логотип и контактные данные в футере.
-5. **Проверка маскирования PII в вебхуках:**
-   - Включить Sandbox Mode, заполнить форму на сайте (включая поле пароля).
-   - Отправить форму. В логах n8n (или webhook.site) убедиться, что значение пароля ушло как `***`, предотвращая утечку данных.
+1. **Side Panel Support:**
+   - Load the unpacked extension, open a browser window, and click the extension icon.
+   - Verify that the Side Panel renders on the right side and scales correctly.
+2. **Form Highlighting:**
+   - Open a page with multiple forms. Select the Eye icon on Form #2 in the Data Tree tab.
+   - Verify that the page smoothly scrolls to Form #2 and highlights it with a neon border.
+3. **URL Parameter Builder:**
+   - Navigate to a site without UTM query strings.
+   - Click "UTM" on the Dashboard. Verify the page reloads with dummy query parameters, and the Health Score updates.
+4. **White Label PDF Branding:**
+   - Load settings, populate agency details, and upload a branding logo.
+   - Run the audit, click "Download PDF Report", and check that the generated document shows the custom logo and footer info.
+5. **PII Masking in Log Streams:**
+   - Enable Sandbox Mode, fill out form details (including passwords), and click submit.
+   - Check the Sandbox submission logs and the n8n receiving webhook payload to confirm passwords have been replaced with `***`.

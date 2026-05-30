@@ -1,156 +1,154 @@
-# Результаты реализации v2.0: Дополнительный функционал и масштабирование
+# Implementation Walkthrough v2.0: Advanced Capabilities & Scaling
 
-Все задачи, запланированные для релиза **v2.0**, были успешно реализованы, протестированы и собраны.
-
----
-
-## 🚀 Что было сделано
-
-### 1. Поддержка Side Panel (Боковая панель)
-* Добавлено разрешение `"sidePanel"` в `manifest.json`.
-* В `service-worker.js` добавлена автоактивация поведения `openPanelOnActionClick: true`. При клике на иконку расширения справа открывается закрепленная панель, что позволяет маркетологу взаимодействовать со страницей, не закрывая интерфейс расширения.
-
-### 2. Брендирование White Label
-* На странице настроек (`Options.jsx`) создана секция **Брендирование отчетов**. Агентство может загрузить свой логотип и указать контактные данные (Email, Телефон, Сайт, Название).
-* Логотипы автоматически сжимаются на HTML5 Canvas до **120x60px** перед конвертацией в Base64. Это гарантирует, что размер изображения укладывается в лимиты хранилища `chrome.storage.sync` (<8 КБ).
-* Сгенерированный PDF-отчет динамически выводит загруженный логотип в шапке и контактные данные в футере.
-
-### 3. Интерактивная подсветка форм в DOM
-* В Data Tree попапа добавлена кнопка с иконкой глаза («Подсветить форму»).
-* При клике посылается сообщение `HIGHLIGHT_FORM` в контент-скрипт. Страница плавно прокручивается к форме, и на нее вешается мерцающая неоново-фиолетовая и изумрудная обводка.
-
-### 4. Автозаполнение UTM-меток (UTM Mock Filler)
-* На вкладке Dashboard добавлена кнопка **«UTM»** рядом с URL.
-* При нажатии расширение перезагружает страницу, автоматически добавляя тестовый хвост стандартных и B2B UTM-меток (`utm_source`, `utm_medium`, `utm_campaign`, `gclid`, `li_fat_id`, `hubspotutk`), что позволяет сразу же запустить аудит и симуляцию Sandbox.
-
-### 5. Глубокий аудит счетчиков аналитики (Main World Inject)
-* Реализован скрипт `inject.js`, внедряемый в контекст страницы (`MAIN` world). Скрипт проверяет инициализацию глобальных JS-объектов счетчиков:
-  - **Google Tag Manager** (переменная `window.google_tag_manager`, `window.dataLayer`)
-  - **Google Analytics 4** (переменная `window.gtag`)
-  - **Yandex Metrica** (переменная `window.ym`)
-  - **Facebook Pixel** (переменная `window.fbq`)
-  - **TikTok Pixel** (переменная `window.ttq`)
-  - **HubSpot Tracking** (переменная `window._hsq`)
-* В случае, если счетчик объявлен в коде страницы (через теги `<script>`), но соответствующий объект не инициализирован (например, заблокирован AdBlock/CSP или упал с ошибкой), расширение вычитает **10 баллов** из Health Score за каждый сбойный счетчик с выводом предупреждения в Dashboard.
-
-### 6. Гибкая маскировка конфиденциальных данных (PII Masking)
-* В песочнице Sandbox Mode 2.0 все значения перехваченных полей маскируются перед отправкой на бэкенд (n8n/GAS):
-  - Поля паролей и кредитных карт заменяются полностью на `***`.
-  - Электронные почты (`l***d@domain.com`) и телефоны (`+7***56`) маскируются частично.
-* Добавлен конструктор **кастомных PII масок** на странице настроек, позволяющий пользователям добавлять свои уникальные ключи (например, `passport`, `secret_code`).
+All tasks planned for the **v2.0** release have been successfully implemented, tested, and built.
 
 ---
 
-## 🧪 Результаты тестирования
+## 🚀 What Was Done
 
-### 1. Автоматизированные Unit-тесты
-Запущен тест-раннер `test_health_score.js`:
+### 1. Side Panel Support
+* Added the `"sidePanel"` permission to `manifest.json`.
+* Configured automated activation behavior `openPanelOnActionClick: true` inside `service-worker.js`. Clicking the extension action icon now slides out a persistent panel from the right edge of the screen, allowing users to audit forms and inspect elements in parallel with the webpage layout.
+
+### 2. White Label Branding
+* Added a **White Label Branding** configuration section to the options page (`Options.jsx`). Agencies can upload their custom logos and populate contact fields (Email, Phone, Website, Agency Name).
+* Logo files are automatically downscaled via HTML5 Canvas to a maximum of **120x60px** before Base64 serialization to ensure configurations safely fit within storage quotas.
+* The compiled A4 PDF report dynamically prints the agency's logo in the header and custom contact links in the footer.
+
+### 3. Interactive DOM Form Highlighting
+* Added an Eye icon button ("Highlight Form") next to forms listed in the Data Tree tab.
+* Clicking this button dispatches a `HIGHLIGHT_FORM` message to the content script. The page smoothly scrolls to focus the targeted form and flashes a neon cyan-and-blue border around it.
+
+### 4. Auto-inject Mock Parameters (UTM Mock Filler)
+* Appended a quick **"UTM"** button adjacent to the URL path on the Dashboard tab.
+* Clicking it injects standard and B2B UTM query parameters (`utm_source`, `utm_medium`, `utm_campaign`, `gclid`, `li_fat_id`, `hubspotutk`) into the active tab URL and reloads the page, allowing immediate validation and Sandbox simulations.
+
+### 5. In-Depth Tracker Diagnostics (Main World Script Injection)
+* Implemented `inject.js` injected directly into the host webpagecontext (`MAIN` world). The script verifies initialization variables for major analytics packages:
+  - **Google Tag Manager** (`window.google_tag_manager`, `window.dataLayer`)
+  - **Google Analytics 4** (`window.gtag`)
+  - **Yandex.Metrica** (`window.ym`)
+  - **Facebook Pixel** (`window.fbq`)
+  - **TikTok Pixel** (`window.ttq`)
+  - **HubSpot Tracking** (`window._hsq`)
+* If a script tag exists in static markup but the global window object fails to initialize (e.g., blocked by AdBlock or local CSP policies), the extension deducts **10 points** from the Health Score for each failed tracker, rendering warnings on the Dashboard.
+
+### 6. Configurable Privacy Masking (PII Masking)
+* In Sandbox Mode 2.0, intercepted fields are automatically masked prior to transmitting the payload to webhook servers (n8n/GAS):
+  - Password and credit card inputs are fully replaced with `***`.
+  - Email addresses (`l***d@domain.com`) and phone numbers (`+7***56`) are partially masked.
+* Added a **Custom PII Masks** form on the settings page so users can configure custom field keys to mask (e.g., `passport`, `secret_code`).
+
+---
+
+## 🧪 Testing and Verification Results
+
+### 1. Automated Unit Tests
+Executed the test runner:
 ```bash
 node test_health_score.js
 ```
-*Результаты:*
-* **Все тесты успешно пройдены (100% SUCCESS).**
+*Results:*
+* **All 8 tests successfully passed (100% SUCCESS).**
 
-### 2. Сборка проекта (Build Compliance)
-Проведена успешная сборка приложения через Vite:
+### 2. Compilation and Bundling
+Successfully bundled the project using Vite:
 ```bash
 npm run build
 ```
-Код успешно скомпилирован в папку `dist/` без предупреждений и ошибок совместимости. `inject.js` корректно копируется в корень сборки.
+Vite compiled all files into `dist/` with zero errors. The `inject.js` script correctly copies to the root build destination.
 
 ---
 
-## 📘 Руководство по проверке для пользователя
+## 📘 User Verification Steps
 
-1. **В браузере:**
-   * Откройте `chrome://extensions/` и нажмите **«Обновить»** на карточке нашего расширения (или перетащите скомпилированную папку `dist/` заново).
-   * Нажмите на иконку расширения в верхней панели Chrome. Вместо выпадающего попапа справа откроется полноразмерная **Side Panel**.
+1. **Reloading the Extension:**
+   * Open `chrome://extensions/` and click **"Reload"** on the extension card.
+   * Click the action icon in Chrome's toolbar. Verify the full-height **Side Panel** opens on the right.
 
-2. **Проверка автозаполнения UTM:**
-   * Откройте любой сайт. Нажмите синюю кнопку **«UTM»** в поле URL в расширении.
-   * Убедиться, что страница обновилась с UTM-хвостом, и Health Score пересчитался.
+2. **Testing URL Injection:**
+   * Navigate to any website. Click the cyan **"UTM"** button next to the URL path.
+   * Confirm the tab refreshes with test parameters and the Health Score recalculates.
 
-3. **Проверка White Label:**
-   * Кликните на значок шестеренки, чтобы открыть Options.
-   * В секции брендинга загрузите логотип вашей компании и заполните реквизиты.
-   * Перейдите обратно, нажмите **«Скачать PDF-отчет»** и откройте файл. В шапке отобразится логотип, а в футере — контакты вашего агентства.
+3. **Verifying White Label Settings:**
+   * Click the settings gear icon to open Options.
+   * Upload a branding logo and save agency contact details.
+   * Return to the dashboard, click **"Download PDF Report"**, and open the generated file. Verify the logo and contact info display.
 
-4. **Проверка подсветки:**
-   * На вкладке «Дерево данных» нажмите иконку **глаза** (Eye) рядом с любой формой.
-   * Страница плавно прокрутится к форме, и она начнет мигать неоновым бирюзово-синим цветом.
+4. **Testing Element Highlighting:**
+   * Go to the Data Tree tab and click the **Eye** icon beside any form.
+   * The page should scroll to the form and flash a glowing neon cyan-and-blue border.
 
-5. **Проверка PII маскирования:**
-   * В Options в секции маскирования добавьте поле `custom_pii`.
-   * Включите Sandbox Mode.
-   * На сайте заполните форму, добавив в любое поле с именем `custom_pii` секретные данные.
-   * Отправьте форму. В логах вебхука в расширении (Options) проверьте, что значение превратилось в `***`.
-
----
-
-## 🛠️ Обновление v2.1: Исправления верстки Side Panel и генерации PDF (Hotfix)
-
-В ходе эксплуатации были устранены следующие технические проблемы:
-
-### 1. Растягивание Side Panel на всю высоту экрана
-* **Проблема:** Интерфейс боковой панели некорректно заполнял доступное пространство по вертикали, ограничиваясь минимальной высотой `580px`.
-* **Решение:** В [src/popup/index.html](file:///Users/nata/Desktop/Леонид%20Временная/UTM%20Validator/src/popup/index.html) для тегов `html`, `body` и `#root` задана высота `h-screen` (100vh) и `overflow-hidden`. Значение `min-w` снижено с `420px` до `320px` для корректной отзывчивости при узком ресайзе боковой панели.
-
-### 2. Исправление White Label (Проблема сохранения логотипа и контактов)
-* **Проблема:** Пользовательские настройки не выводились в скачиваемом PDF.
-* **Причина:** Лимит `chrome.storage.sync` на одно поле составляет **8 КБ** (`QUOTA_BYTES_PER_ITEM`). Длина base64-строки сжатого логотипа превышала этот предел.
-* **Решение:** Перенесли хранение ключа `whiteLabel` из `chrome.storage.sync` в `chrome.storage.local` в файле [src/popup/store.js](file:///Users/nata/Desktop/Леонид%20Временная/UTM%20Validator/src/popup/store.js). Локальное хранилище расширений имеет лимит **10 МБ**, что полностью снимает любые ограничения.
-
-### 3. Исправление верстки и обрезки скачиваемого PDF
-* **Решение:** Заменили единицы измерения на жесткую сетку пикселей (`794px` на `1122px`), установили внешнему контейнеру свойство `position: 'fixed'` вместо `absolute` со скрытым сдвигом, и ограничили список рекомендаций в PDF до **4 наиболее критичных** (`penalties.slice(0, 4)`) для сохранения премиального одностраничного формата отчета.
+5. **Verifying PII Masking:**
+   * Go to Options and add `custom_pii` under PII settings.
+   * Enable Sandbox Mode.
+   * Fill out form fields on the website, including a field named `custom_pii` with mock data.
+   * Submit the form. Under Sandbox submission logs, verify that the value has been replaced with `***`.
 
 ---
 
-## 🛠️ Обновление v2.2: Повышение стабильности и логические исправления
+## 🛠️ Update v2.1: Side Panel Resizing & PDF Generation Fixes (Hotfix)
 
-* **Регистронезависимое сопоставление UTM в URL:** В [store.js](file:///Users/nata/Desktop/Леонид%20Временная/UTM%20Validator/src/popup/store.js) алгоритм приведен к нижнему регистру при проверке.
-* **Устранение ложных PII-маскирований:** Проверка `'key'` ограничена точным соответствием имени поля (`name === 'key'`), префиксами (`key_`) или суффиксами с разделителями (`_key`, `-key`).
-* **Защита от крашей (Defensive Fallbacks):** Внутрь `calculateHealthScore` добавлены защитные инициализации значений по умолчанию.
-* **Валидация Webhook URL:** Добавлена проверка формата URL перед сохранением в настройках.
+The following UI/UX and PDF layout updates were completed:
 
----
+### 1. Side Panel Styling & Scrolling
+* **Problem:** The side panel container did not fill the vertical screen height correctly and sat at a static height constraint.
+* **Solution:** Set height rules to `h-screen` (100vh) and enabled `overflow-hidden` for `html`, `body`, and `#root` inside [src/popup/index.html](src/popup/index.html). Decreased `min-w` parameters from `420px` to `320px` for optimal responsiveness.
 
-## 🎨 Обновление v2.3: Фирменный ребрендинг OTReniX
+### 2. White Label Branding Local Storage Migration
+* **Problem:** Sync limits cropped larger Base64-encoded logo files.
+* **Reason:** `chrome.storage.sync` holds a strict item size limit of **8 KB** (`QUOTA_BYTES_PER_ITEM`).
+* **Solution:** Migrated the `whiteLabel` configuration from `chrome.storage.sync` to `chrome.storage.local` inside [src/popup/store.js](src/popup/store.js). Local storage yields a generous **10 MB** limit, allowing larger logos.
 
-В соответствии с корпоративным референсом маркетингового агентства **OTReniX** были проведены следующие стилистические изменения для объединения всех страниц под единый визуальный стандарт:
-
-### 1. Страница настроек (Options)
-* Заменены все устаревшие цвета `indigo` (фиолетовые) на фирменное сочетание королевского синего (`blue-600/700`) и неоново-бирюзового (`cyan-400`).
-* Перекрашена шапка (логотип c градиентом от циана к синему), рамки фокуса полей ввода, кастомные бейджи и подсветка выбранных вебхуков в консоли.
-
-### 2. Интерактивная подсветка форм и Уведомления
-* В [content.js](file:///Users/nata/Desktop/Леонид%20Временная/UTM%20Validator/src/content/content.js) изменен визуальный отклик подсветки: вместо фиолетового цвета формы теперь плавно мигают ярким неоновым бирюзовым (`#06b6d4`) и синим (`#2563eb`) цветами.
-* Рамки и неоновое свечение всплывающего Sandbox-уведомления переведены в фирменный бирюзовый оттенок.
-
-### 3. PDF Отчёт
-* Контактный промо-блок CTA в подвале PDF-отчета стилизован под премиальный горизонтальный градиент (`bg-gradient-to-r from-blue-700 to-cyan-600`) с контрастным легким текстом, повторяя логику референса.
-* Шапка отчета снабжена стильной бирюзово-синей градиентной заглушкой (если логотип White Label не загружен).
+### 3. PDF Layout Positioning and Pagination
+* **Solution:** Standardized dimensions to a fixed pixel layout (`794px` by `1122px`), refactored positioning styles to use `position: 'fixed'` instead of off-screen `absolute` shifts, and capped visible audit penalties to the **top 4 critical items** (`penalties.slice(0, 4)`) to preserve clean formatting.
 
 ---
 
-## 🛠️ Обновление v2.4: Решение проблемы детекции отложенной (lazy-loaded) аналитики
+## 🛠️ Update v2.2: Stability and Logic Updates
 
-Устранена техническая проблема, при которой отложенные скрипты аналитики (например, Google Analytics, загружаемый через WP Rocket при первом взаимодействии пользователя с сайтом, или скрипты после согласия с cookie-политикой) отображались в расширении как «Не найден».
+* **Case-Insensitive Query Parsing:** The matching algorithm inside [store.js](src/popup/store.js) now matches URL queries in lowercase.
+* **PII Pattern Accuracy:** Field checks for PII keys are now restricted to exact name lookups (`name === 'key'`), prefixes (`key_`), or delimited suffixes (`_key`, `-key`).
+* **Defensive Calculations:** Added defaults inside `calculateHealthScore` to guarantee execution if arguments resolve to null or undefined.
+* **Webhook Validation:** Implemented regex verification for settings URL inputs.
 
-### 1. Событийно-ориентированная детекция в inject.js
-* Добавлены **однократные слушатели событий взаимодействия** (`scroll`, `mousemove`, `keydown`, `click`, `touchstart`) в [public/inject.js](file:///Users/nata/Desktop/Леонид%20Временная/UTM%20Validator/public/inject.js).
-* Как только пользователь совершает любое движение или клик, скрипт запускает серию проверок глобальных объектов с возрастающими интервалами (500мс, 1500мс, 3000мс), что гарантирует успешную регистрацию инициализированных систем аналитики.
+---
 
-### 2. Двусторонний опрос состояния
-* В [src/content/content.js](file:///Users/nata/Desktop/Леонид%20Временная/UTM%20Validator/src/content/content.js) реализована функция `requestInjectedScan()`, которая через CustomEvent `TRIGGER_INJECTED_SCAN` опрашивает Main World при загрузке DOM, изменениях дерева страниц (`MutationObserver`) и по ручному запросу из Popup (`TRIGGER_MANUAL_SCAN`).
-* Это синхронизирует состояние расширения с динамическими обновлениями на странице в реальном времени.
+## 🎨 Update v2.3: OTReniX Brand Recoloring
 
-### 3. Исправление логики сопоставления в UI и PDF
-* Изменена логика проверки наличия трекеров: если глобальный JS-объект инициализирован, то счетчик **по определению считается найденным**, даже если в исходном статическом HTML отсутствует тег `<script src="...">`.
-* Исправление внесено как в интерфейс Dashboard, так и в алгоритм генерации PDF-отчетов в [src/popup/Popup.jsx](file:///Users/nata/Desktop/Леонид%20Временная/UTM%20Validator/src/popup/Popup.jsx).
+Designed the interface around the **OTReniX** corporate visual identity:
 
-### 4. Низкоуровневый перехват сетевых запросов (Network Interception)
-* **Внутристраничный перехват в `inject.js`:** Добавлено monkey-patching функций `window.fetch`, `XMLHttpRequest.prototype.open` и `navigator.sendBeacon` для выявления обращений к серверам аналитики (Google Analytics, Yandex, Facebook, TikTok, HubSpot) на лету.
-* **Фоновый мониторинг трафика в `service-worker.js`:** Интегрирован слушатель `chrome.webRequest.onBeforeRequest` для прослушивания исходящего трафика вкладки. Он перехватывает запросы к трекерам из любых фреймов (включая кросс-доменные iframe) и синхронизирует статус с Zustand-стором.
-* **Сброс при переходах:** Добавлена очистка временных результатов сетевой детекции в сессионном хранилище при коммите навигации на новый сайт (`chrome.webNavigation.onCommitted`), чтобы предотвратить накопление ложных срабатываний.
+### 1. Settings (Options)
+* Replaced outdated purple `indigo` tags with royal blue (`blue-600/700`) and cyan (`cyan-400`) style tokens.
+* Re-styled headers, focus rings, custom labels, and webhook logs console outputs.
 
+### 2. Form Highlighting & Alerts
+* Form borders now pulse with a vibrant cyan (`#06b6d4`) and blue (`#2563eb`) animation in [content.js](src/content/content.js).
+* Interception alert boxes now render with custom cyan borders and drop shadows.
 
+### 3. Executive Report Styling
+* The CTA contact card in the A4 PDF footer has been styled with a custom gradient background (`bg-gradient-to-r from-blue-700 to-cyan-600`) and light font weights.
+* A fallback cyan-to-blue gradient banner displays in the PDF header if no agency logo is loaded.
+
+---
+
+## 🛠️ Update v2.4: Lazy-Loaded Tracker Detection
+
+Fixed an issue where delayed tracking scripts (e.g., loaded after cookie consent prompts or via optimization plugins) were not flagged as active.
+
+### 1. Interaction-Driven Checks inside inject.js
+* Bound single-use listeners on user activities (`scroll`, `mousemove`, `keydown`, `click`, `touchstart`) inside [public/inject.js](public/inject.js).
+* When a user interacts with the page, a check loop runs with increasing intervals (500ms, 1500ms, 3000ms) to ensure lazy-loaded objects are captured.
+
+### 2. Bidirectional Diagnostics
+* Content script `requestInjectedScan()` dispatches a `TRIGGER_INJECTED_SCAN` CustomEvent inside [src/content/content.js](src/content/content.js) to query page variables during DOM loaded events, tree updates (`MutationObserver`), and manual trigger clicks.
+* Keeps the extension synchronized with real-time variables.
+
+### 3. UI and PDF Matching Logic
+* Refactored scripts check rules: if a global window tracking object is active, it is considered **present and active**, regardless of static script tags.
+* Refactored the Dashboard UI components and the PDF exporter layout in [src/popup/Popup.jsx](src/popup/Popup.jsx).
+
+### 4. Direct Network Hooking (Network Interception)
+* **Main World Hooking:** Intercepts outgoing requests by monkey-patching `window.fetch`, `XMLHttpRequest.prototype.open`, and `navigator.sendBeacon` inside `inject.js` to log analytical calls on the fly.
+* **Background Monitoring:** Configured `chrome.webRequest.onBeforeRequest` in `service-worker.js` to capture pixel events originating from third-party iframes and synchronizes statuses with the store.
+* **Navigation Reset:** Redirect queries and network flags are cleared via `chrome.webNavigation.onCommitted` to avoid false positives.

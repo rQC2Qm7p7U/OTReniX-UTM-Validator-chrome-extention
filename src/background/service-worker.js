@@ -302,7 +302,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         responseText = await response.text();
         success = response.ok;
       } catch (err) {
-        responseText = err.message || 'Ошибка сети';
+        responseText = err.message || 'Network error';
         responseStatus = 500;
         success = false;
       }

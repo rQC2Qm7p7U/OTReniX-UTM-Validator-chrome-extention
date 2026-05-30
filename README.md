@@ -1,91 +1,91 @@
 # Dynamic UTM & Lead Source Validator (Chrome Extension)
 
-**Dynamic UTM & Lead Source Validator** — это премиальный инструмент для B2B-маркетологов, веб-аналитиков и диджитал-агентств, разработанный для аудита форм захвата лидов, отслеживания редиректов и симуляции сквозной аналитики.
+**Dynamic UTM & Lead Source Validator** is a premium tool for B2B marketers, web analysts, and digital agencies designed to audit lead capture forms, track redirect chains, and simulate end-to-end analytics payloads.
 
-Инструмент помогает предотвратить "утечку" UTM-меток и рекламных параметров при отправке заявок в CRM (например, Salesforce, HubSpot, Bitrix24), гарантируя 100% точность атрибуции рекламных бюджетов.
-
----
-
-## 🎯 Зачем это нужно?
-
-В современном B2B-маркетинге стоимость привлечения лида (CPL) может измеряться сотнями долларов. Однако до **30% лидов** теряют свою маркетинговую атрибуцию (источник перехода) на пути от клика по рекламе до CRM-системы. Это происходит из-за:
-1. **Редиректов (301/302):** Ссылки на рекламу ведут на один URL, но сервер перенаправляет пользователя, "стирая" UTM-хвост.
-2. **Динамических форм (React/Vue):** Формы рендерятся после загрузки страницы, и скрипты аналитики не успевают вставить метки в скрытые поля.
-3. **Shadow DOM / Iframe:** Встроенные конструкторы (например, WordPress Divi, Elementor, HubSpot forms) прячут поля ввода, делая их недоступными для стандартных скриптов захвата.
-
-**Dynamic UTM Validator выявляет эти проблемы за один клик.**
+The tool helps prevent "leakage" of UTM tags and advertising parameters when submitting leads to CRMs (e.g., Salesforce, HubSpot, Bitrix24), ensuring 100% accuracy of ad budget attribution.
 
 ---
 
-## ✨ Ключевые возможности
+## 🎯 Why Is This Needed?
 
-### 1. Мгновенная оценка здоровья страницы (Health Score)
-Интеллектуальная система оценивает страницу по шкале от 0 до 100%. Оценка рассчитывается по методу штрафных баллов (Penalty Points):
-* **🔴 Критический статус (🔴 Red):** UTM-метки есть в URL, но отсутствуют в скрытых полях формы или хранилище. Редирект стёр UTM-параметры.
-* **🟠 Высокий статус (🟠 Orange):** Скрытые поля найдены, но при отправке формы они остаются пустыми.
-* **🟡 Средний статус (🟡 Yellow):** Форма не подготовлена к приему меток (нет скрытых полей под UTM).
-* **🔵 Предупреждение (🔵 Blue):** На странице отсутствуют куки базовых аналитических систем (`_ga` или `_ym_uid`).
+In modern B2B marketing, the Cost Per Lead (CPL) can measure in hundreds of dollars. However, up to **30% of leads** lose their marketing attribution (traffic source) on the way from an ad click to the CRM system. This happens due to:
+1. **Redirects (301/302):** Ad links lead to one URL, but the server redirects the user, "stripping" the UTM query parameters.
+2. **Dynamic Forms (React/Vue):** Forms are rendered after the page loads, and standard analytics scripts don't populate the hidden fields in time.
+3. **Shadow DOM / Iframes:** Embedded form builders (e.g., WordPress Divi, Elementor, HubSpot forms) hide input fields inside shadow roots or cross-domain iframes, making them inaccessible to default capture scripts.
 
-### 2. Интерактивное дерево данных (Data Tree)
-Визуализирует полную DOM-структуру форм на странице, включая формы во фреймах (iframe) и внутри Shadow DOM. Маркетолог сразу видит:
-* Какие поля присутствуют в форме (имя, тип, текущее значение).
-* Скрытые поля UTM подсвечиваются зеленым (если заполнены) или красным (если пусты).
-
-### 3. Режим симуляции (Sandbox Mode 2.0)
-Позволяет провести безопасный стресс-тест отправки формы:
-* Перехватывает событие отправки формы (блокирует реальную отправку, чтобы не засорять рабочую CRM тестовыми лидами).
-* Собирает payload (все заполненные поля + метки из кук и URL).
-* Отправляет POST-запрос на ваш тестовый вебхук (например, в **n8n** или **Google Apps Script**).
-* Показывает статус ответа сервера (HTTP 200, 500 и т.д.) прямо в интерфейсе расширения.
-
-### 4. Двухвекторный экспорт отчетов
-* **Кнопка «Copy for Devs»:** Копирует отформатированное техническое ТЗ в Markdown для мгновенной отправки разработчикам в Jira или Telegram.
-* **Кнопка «Download Executive Report»:** Скачивает красивый, готовый к презентации PDF-отчет с крупными показателями и призывом к действию (CTA).
+**Dynamic UTM Validator exposes these issues in a single click.**
 
 ---
 
-## 📈 Использование расширения для продаж (Agency-First Playbook)
+## ✨ Key Features
 
-Если вы — диджитал-агентство, вы можете использовать это расширение как **бесплатный инструмент лидогенерации (лид-магнит)** для продажи консалтинга и услуг сквозной аналитики:
+### 1. Instant Page Health Score
+An intelligent engine rates the page on a scale from 0 to 100% using a Penalty Points system:
+* **🔴 Critical Status (🔴 Red):** UTM parameters are present in the URL but missing from form hidden fields or storage. Alternatively, a redirect has stripped UTM parameters.
+* **🟠 High Status (🟠 Orange):** Hidden fields are detected, but they remain empty upon form submission.
+* **🟡 Medium Status (🟡 Yellow):** The form is not prepared to capture tags (lacks matching hidden fields).
+* **🔵 Warning (🔵 Blue):** The page is missing core analytics cookies (`_ga` or `_ym_uid`).
 
-1. **Аудит потенциального клиента:** Откройте форму заявки на сайте крупного B2B-клиента, куда идет дорогой трафик.
-2. **Выявление ошибки:** Запустите аудит с помощью расширения. Если оценка Health Score низкая (например, редирект стирает UTM-параметры), скачайте PDF-отчет.
-3. **Outreach:** Отправьте отчет директору по маркетингу (CMO) или владельцу бизнеса с письмом:
-   > *"Здравствуйте! Мы проверили форму заявки на вашем сайте. Из-за технической ошибки при переходе с рекламы LinkedIn Ads параметры аналитики теряются на этапе редиректа. Вы тратите бюджет, но в CRM лиды приходят как 'Органика/Неизвестно'. Вот отчет об аудите. Мы можем помочь исправить это и настроить сквозную аналитику. Давайте обсудим?"*
+### 2. Interactive Data Tree
+Visualizes the complete DOM structure of forms on the page, including forms inside iframes and Shadow DOMs. Marketers can immediately see:
+* Which fields are present in the form (name, type, current value).
+* Hidden UTM fields highlighted in green (if filled) or red (if empty).
+
+### 3. Simulation Mode (Sandbox Mode 2.0)
+Allows you to perform a safe stress-test of form submissions:
+* Intercepts form submit events (blocks actual submission to prevent polluting production CRMs with test leads).
+* Collects the payload (all filled fields + tags from cookies and URL).
+* Sends a POST request to your test webhook (e.g., to **n8n** or **Google Apps Script**).
+* Displays the server response status (HTTP 200, 500, etc.) directly in the extension UI.
+
+### 4. Dual-Vector Report Export
+* **"Copy Tech Spec (MD)" Button:** Copies a formatted Markdown technical specification to clipboard, ready to send to developers via Jira, Slack, or Telegram.
+* **"Download PDF Report" Button:** Downloads a beautiful, presentation-ready PDF report with high-level metrics and a custom call to action (CTA).
 
 ---
 
-## 💻 Инструкция по установке (Для пользователей)
+## 📈 Agency-First Playbook (Lead Generation)
 
-Так как расширение находится на этапе разработки (MVP), оно устанавливается в браузер в режиме разработчика:
+If you are a digital agency, you can use this extension as a **free lead magnet** to sell consulting and end-to-end analytics setup services:
 
-1. Скачайте папку с проектом расширения.
-2. В терминале папки выполните команды для сборки (требуется установленный Node.js):
+1. **Audit a Prospect:** Open a demo/contact form on a high-traffic B2B prospect's site.
+2. **Find the Leak:** Run the audit. If the Health Score is low (e.g., redirects strip UTM parameters), download the PDF report.
+3. **Outreach:** Send the report to the CMO or business owner with a short message:
+   > *"Hello! We audited the contact form on your website. Due to a technical redirect error, marketing tracking parameters from your LinkedIn Ads are lost before the lead is submitted. You are spending budget, but leads arrive in your CRM as 'Organic/Unknown'. We've attached the audit report. We can help you fix this and configure correct end-to-end tracking. Let's discuss."*
+
+---
+
+## 💻 Installation Guide (For Users)
+
+Since this extension is in development, it is installed in Developer Mode:
+
+1. Download the extension project folder.
+2. Open your terminal in the project directory and build the extension (requires Node.js):
    ```bash
    npm install
    npm run build
    ```
-   В результате в корне проекта появится папка `dist`.
-3. Откройте Google Chrome и перейдите в раздел расширений по адресу: `chrome://extensions/`
-4. Включите **«Режим разработчика»** (Developer mode) переключателем в правом верхнем углу.
-5. Нажмите кнопку **«Загрузить распакованное расширение»** (Load unpacked) в левом верхнем углу и выберите созданную папку `dist`.
-6. Готово! Иконка расширения появится на вашей панели инструментов Chrome.
+   This generates a `dist` folder in the root directory.
+3. Open Google Chrome and navigate to: `chrome://extensions/`
+4. Toggle **"Developer mode"** in the top-right corner.
+5. Click **"Load unpacked"** in the top-left corner and select the compiled `dist` folder.
+6. Done! The extension icon will appear in your Chrome toolbar.
 
 ---
 
-## 🚀 Пошаговое руководство: Как запустить аудит и симуляцию
+## 🚀 Step-by-Step Audit & Simulation Walkthrough
 
-1. **Запуск аудита:**
-   * Перейдите на любую веб-страницу с формой (например, страницу демо-заявки).
-   * Добавьте тестовые метки к адресу страницы, например: `?utm_source=google&utm_medium=cpc&li_fat_id=test_linkedin_123`
-   * Нажмите на иконку расширения. На вкладке **«Дашборд»** вы увидите рассчитанную оценку здоровья страницы и список проблем.
+1. **Running an Audit:**
+   * Navigate to any web page containing a form (e.g., a demo request page).
+   * Append test parameters to the URL, for example: `?utm_source=google&utm_medium=cpc&li_fat_id=test_linkedin_123`
+   * Click the extension icon. The **Dashboard** tab will display the calculated Health Score and the list of issues.
 
-2. **Просмотр полей:**
-   * Перейдите на вкладку **«Дерево данных»**. 
-   * Раскройте форму в списке, чтобы увидеть, заполнились ли скрытые поля значениями меток из URL.
+2. **Inspecting Form Fields:**
+   * Switch to the **Data Tree** tab.
+   * Expand a form in the list to verify if hidden fields are populated with the URL parameter values.
 
-3. **Симуляция отправки (Sandbox):**
-   * Нажмите кнопку **«Настройки»** (шестеренка вверху). В поле Webhook URL вставьте адрес тестового вебхука (его можно получить бесплатно на сервисе [Webhook.site](https://webhook.site)). Нажмите «Сохранить».
-   * Вернитесь в попап и перейдите на вкладку **«Песочница»**. Включите тумблер **Sandbox Mode 2.0**.
-   * Заполните форму на открытом сайте и нажмите «Отправить».
-   * Внизу страницы появится тост-уведомление о перехвате, а в попапе расширения (вкладка Песочница / Настройки) появится лог отправленного вебхука со всеми переданными полями и куками.
+3. **Simulating Submission (Sandbox):**
+   * Click **Settings** (the gear icon at the top). Paste your test webhook URL (you can get one for free on [Webhook.site](https://webhook.site)). Click "Save".
+   * Return to the popup and switch to the **Sandbox** tab. Toggle **Sandbox Mode 2.0** on.
+   * Fill out the form on the audited website and click submit.
+   * A toast notification will confirm the submission was intercepted, and a new entry will appear in the Sandbox log showing the sent payload and server response.

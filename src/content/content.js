@@ -383,7 +383,7 @@ function showInterceptNotification(form) {
 
   container.innerHTML = `
     <span style="color: #06b6d4; font-weight: bold; font-size: 16px;">⚡ Sandbox 2.0:</span>
-    <span>Перехвачена отправка формы. Отчет отправлен в расширение.</span>
+    <span>Form submission intercepted. Report sent to extension.</span>
   `;
 
   document.body.appendChild(container);

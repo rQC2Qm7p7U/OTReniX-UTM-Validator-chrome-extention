@@ -80,8 +80,8 @@ export const calculateHealthScore = (forms, redirects, storages, cookies, urlStr
       score -= penaltyVal;
       penalties.push({
         type: 'critical',
-        label: 'UTM отсутствуют в формах / Storage',
-        desc: `Метки присутствуют в URL, но отсутствуют в скрытых полях формы или локальном хранилище: ${missingDetails.join(', ')}`,
+        label: 'UTM missing in forms / Storage',
+        desc: `Parameters are present in URL but missing in form hidden fields or local storage: ${missingDetails.join(', ')}`,
         penalty: penaltyVal,
         status: '🔴 Red'
       });
@@ -105,7 +105,7 @@ export const calculateHealthScore = (forms, redirects, storages, cookies, urlStr
       const firstUrlTrackingParams = Array.from(firstUrlObj.searchParams.keys()).filter(key => allTrackingKeys.includes(key));
       if (firstUrlTrackingParams.length > 0 && activeTrackingParamsInUrl.length === 0) {
         utmWasStripped = true;
-        redirectStepInfo = `Редирект с ${firstRedirect.from} стёр метки.`;
+        redirectStepInfo = `Redirect from ${firstRedirect.from} stripped parameters.`;
       }
     }
     
@@ -114,8 +114,8 @@ export const calculateHealthScore = (forms, redirects, storages, cookies, urlStr
       score -= penaltyVal;
       penalties.push({
         type: 'critical',
-        label: 'Редирект стёр UTM-параметры',
-        desc: `Зафиксирован редирект, который очистил параметры аналитики до загрузки страницы. ${redirectStepInfo}`,
+        label: 'Redirect stripped UTM parameters',
+        desc: `A redirect was detected that stripped marketing parameters before the page loaded. ${redirectStepInfo}`,
         penalty: penaltyVal,
         status: '🔴 Red'
       });
@@ -136,7 +136,7 @@ export const calculateHealthScore = (forms, redirects, storages, cookies, urlStr
         
         if (isHidden && isTrackingName && (!input.value || input.value.trim() === '')) {
           emptyHiddenFields = true;
-          emptyDetails.push(`Форма #${fIdx + 1} (${input.name || 'без имени'})`);
+          emptyDetails.push(`Form #${fIdx + 1} (${input.name || 'unnamed'})`);
         }
       });
     });
@@ -146,8 +146,8 @@ export const calculateHealthScore = (forms, redirects, storages, cookies, urlStr
       score -= penaltyVal;
       penalties.push({
         type: 'high',
-        label: 'Скрытые поля UTM пусты',
-        desc: `Скрытые поля обнаружены, но их значения пусты, несмотря на наличие меток в URL: ${emptyDetails.join(', ')}`,
+        label: 'UTM hidden fields are empty',
+        desc: `Hidden fields are detected but their values are empty, despite UTMs in URL: ${emptyDetails.join(', ')}`,
         penalty: penaltyVal,
         status: ' 🟠 Orange'
       });
@@ -173,8 +173,8 @@ export const calculateHealthScore = (forms, redirects, storages, cookies, urlStr
       score -= penaltyVal;
       penalties.push({
         type: 'medium',
-        label: 'Форма не готова к приёму UTM',
-        desc: 'В формах отсутствуют скрытые поля для захвата меток. Любой входящий трафик с рекламы потеряет атрибуцию.',
+        label: 'Form not ready to capture UTM',
+        desc: 'Forms do not contain hidden fields to capture marketing parameters. Incoming campaign traffic will lose attribution.',
         penalty: penaltyVal,
         status: '🟡 Yellow'
       });
@@ -196,8 +196,8 @@ export const calculateHealthScore = (forms, redirects, storages, cookies, urlStr
     score -= penaltyVal;
     penalties.push({
       type: 'warning',
-      label: 'Отсутствуют куки систем аналитики',
-      desc: `Не найдены куки базовых систем веб-аналитики: ${missingCookies.join(', ')}. Проверьте, установлены ли счетчики на сайте.`,
+      label: 'Analytics cookies are missing',
+      desc: `Core web analytics cookies not found: ${missingCookies.join(', ')}. Check if scripts are installed.`,
       penalty: penaltyVal,
       status: '🔵 Blue'
     });
@@ -220,8 +220,8 @@ export const calculateHealthScore = (forms, redirects, storages, cookies, urlStr
         score -= penaltyVal;
         penalties.push({
           type: 'warning',
-          label: `${sys.label} не инициализирован`,
-          desc: `Скрипт ${sys.label} обнаружен в коде страницы, но его глобальный объект в объекте window не инициализирован. Загрузка могла быть заблокирована блокировщиком рекламы или расширением конфиденциальности.`,
+          label: `${sys.label} not initialized`,
+          desc: `The ${sys.label} script is present in page DOM but its global window object is not initialized. Loading might be blocked by an ad blocker or privacy extension.`,
           penalty: penaltyVal,
           status: '🔵 Blue'
         });

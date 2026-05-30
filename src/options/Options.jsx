@@ -79,7 +79,7 @@ export default function Options() {
         new URL(cleanUrl);
         setUrlError('');
       } catch (e) {
-        setUrlError('Недопустимый формат URL вебхука. Ссылка должна начинаться с http:// или https://');
+        setUrlError('Invalid Webhook URL format. Link must start with http:// or https://');
         return;
       }
     } else {
@@ -134,7 +134,7 @@ export default function Options() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setLogoError('Выбранный файл не является изображением.');
+      setLogoError('The selected file is not an image.');
       return;
     }
 
@@ -165,7 +165,7 @@ export default function Options() {
           const compressedBase64 = canvas.toDataURL('image/png');
           setLogoBase64(compressedBase64);
         } catch (err) {
-          setLogoError('Не удалось обработать/сжать изображение.');
+          setLogoError('Failed to process/compress image.');
         }
       };
       img.src = event.target.result;
@@ -192,7 +192,7 @@ export default function Options() {
               <h1 className="text-xl font-bold tracking-wide text-white">
                 Dynamic UTM & Lead Source Validator
               </h1>
-              <p className="text-xs text-slate-400">Настройки интеграции, брендинга и безопасности</p>
+              <p className="text-xs text-slate-400">Integration, Branding & Security Settings</p>
             </div>
           </div>
           <button 
@@ -200,7 +200,7 @@ export default function Options() {
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-sm font-semibold rounded-lg flex items-center gap-2 cursor-pointer transition-colors shadow-lg shadow-blue-600/20"
           >
             {savedStatus ? <Check className="w-4 h-4 text-emerald-400" /> : <Save className="w-4 h-4" />}
-            {savedStatus ? 'Сохранено!' : 'Сохранить настройки'}
+            {savedStatus ? 'Saved!' : 'Save Settings'}
           </button>
         </header>
 
@@ -213,10 +213,10 @@ export default function Options() {
             <section className="glass-panel rounded-xl p-5 flex flex-col gap-4">
               <div className="flex items-center gap-2 border-b border-white/5 pb-2">
                 <Settings className="w-4 h-4 text-cyan-400" />
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Настройка вебхука (n8n / GAS)</h2>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Webhook Settings (n8n / GAS)</h2>
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-xs text-slate-400">Адрес получателя тестовых лидов:</label>
+                <label className="text-xs text-slate-400">Test Leads Receiver Webhook URL:</label>
                 <input
                   type="text"
                   value={inputUrl}
@@ -233,7 +233,7 @@ export default function Options() {
                   </span>
                 )}
                 <span className="text-[10px] text-slate-500 flex items-center gap-1">
-                  <Info className="w-3.5 h-3.5" /> В режиме Sandbox Mode все формы при отправке будут перенаправлены на этот адрес методом POST.
+                  <Info className="w-3.5 h-3.5" /> In Sandbox Mode, all form submissions are redirected to this URL via POST.
                 </span>
               </div>
             </section>
@@ -242,23 +242,23 @@ export default function Options() {
             <section className="glass-panel rounded-xl p-5 flex flex-col gap-4">
               <div className="flex items-center gap-2 border-b border-white/5 pb-2">
                 <ImageIcon className="w-4 h-4 text-cyan-400" />
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Брендирование отчетов (White Label)</h2>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Report Branding (White Label)</h2>
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] text-slate-400">Название агентства:</label>
+                  <label className="text-[11px] text-slate-400">Agency Name:</label>
                   <input
                     type="text"
                     value={agencyName}
                     onChange={(e) => setAgencyName(e.target.value)}
-                    placeholder="Например: Super Marketing Agency"
+                    placeholder="e.g. Super Marketing Agency"
                     className="bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-cyan-500"
                   />
                 </div>
                 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] text-slate-400">Сайт агентства:</label>
+                  <label className="text-[11px] text-slate-400">Agency Website:</label>
                   <input
                     type="text"
                     value={wlWebsite}
@@ -269,7 +269,7 @@ export default function Options() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] text-slate-400">Email агентства:</label>
+                  <label className="text-[11px] text-slate-400">Agency Email:</label>
                   <input
                     type="text"
                     value={wlEmail}
@@ -280,7 +280,7 @@ export default function Options() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] text-slate-400">Телефон агентства:</label>
+                  <label className="text-[11px] text-slate-400">Agency Phone:</label>
                   <input
                     type="text"
                     value={wlPhone}
@@ -292,7 +292,7 @@ export default function Options() {
               </div>
 
               <div className="flex flex-col gap-2 mt-2">
-                <label className="text-[11px] text-slate-400">Логотип агентства (автоматически сожмется до 120x60px):</label>
+                <label className="text-[11px] text-slate-400">Agency Logo (auto-resized to 120x60px):</label>
                 <div className="flex items-center gap-4">
                   {logoBase64 ? (
                     <div className="relative p-2 bg-slate-900/60 border border-white/10 rounded-lg flex items-center justify-center w-36 h-20">
@@ -300,7 +300,7 @@ export default function Options() {
                       <button 
                         onClick={handleRemoveLogo}
                         className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center text-[10px] font-bold text-white shadow focus:outline-none cursor-pointer"
-                        title="Удалить логотип"
+                        title="Remove logo"
                       >
                         ×
                       </button>
@@ -308,13 +308,13 @@ export default function Options() {
                   ) : (
                     <label className="flex flex-col items-center justify-center w-36 h-20 border border-dashed border-white/15 hover:border-white/30 rounded-lg cursor-pointer transition-colors text-slate-500 hover:text-slate-400">
                       <ImageIcon className="w-5 h-5 mb-1" />
-                      <span className="text-[9px] font-medium text-center">Загрузить логотип</span>
+                      <span className="text-[9px] font-medium text-center">Upload Logo</span>
                       <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                     </label>
                   )}
                   <div className="flex-1 text-[9px] text-slate-500 leading-normal">
-                    Логотип будет добавлен в шапку PDF-отчета, а контактные данные — в футер.
-                    Сжатие гарантирует, что размер изображения Base64 будет менее 8 КБ для беспрепятственной синхронизации Chrome.
+                    Logo will be added to PDF header and contacts to footer.
+                    Compression ensures Base64 size remains under 8 KB for smooth sync in Chrome.
                     {logoError && <span className="block text-red-400 font-bold mt-1">⚠️ {logoError}</span>}
                   </div>
                 </div>
@@ -325,12 +325,12 @@ export default function Options() {
             <section className="glass-panel rounded-xl p-5 flex flex-col gap-4">
               <div className="flex items-center gap-2 border-b border-white/5 pb-2">
                 <ListFilter className="w-4 h-4 text-cyan-400" />
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Отслеживаемые параметры аналитики</h2>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Tracked Analytics Parameters</h2>
               </div>
 
               {/* Default Keys (Read-only) */}
               <div className="flex flex-col gap-2">
-                <label className="text-xs text-slate-400">Встроенные B2B-параметры (активны по умолчанию):</label>
+                <label className="text-xs text-slate-400">Built-in B2B Parameters (active by default):</label>
                 <div className="flex flex-wrap gap-1.5">
                   {DEFAULT_B2B_KEYS.map(key => (
                     <span key={key} className="px-2.5 py-1 bg-slate-900/60 border border-white/5 rounded-md text-[10px] font-mono text-slate-400">
@@ -342,7 +342,7 @@ export default function Options() {
 
               {/* Custom Keys Builder */}
               <div className="flex flex-col gap-3 mt-2">
-                <label className="text-xs text-slate-400">Ваши кастомные CRM/ABM метки:</label>
+                <label className="text-xs text-slate-400">Your Custom CRM/ABM parameters:</label>
                 
                 {/* Form to add */}
                 <form onSubmit={handleAddKey} className="flex gap-2">
@@ -350,20 +350,20 @@ export default function Options() {
                     type="text"
                     value={newKey}
                     onChange={(e) => setNewKey(e.target.value)}
-                    placeholder="Например: Pi_utm_source, internal_id..."
+                    placeholder="e.g. Pi_utm_source, internal_id..."
                     className="flex-1 bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-slate-300 focus:outline-none focus:border-cyan-500"
                   />
                   <button 
                     type="submit"
                     className="px-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
                   >
-                    <Plus className="w-4 h-4" /> Добавить
+                    <Plus className="w-4 h-4" /> Add
                   </button>
                 </form>
 
                 {/* Custom keys list */}
                 {keysList.length === 0 ? (
-                  <p className="text-[10px] text-slate-500 italic">Список кастомных параметров пуст. Вы можете добавить ключи специфичных CRM систем.</p>
+                  <p className="text-[10px] text-slate-500 italic">Custom parameters list is empty. You can add keys for specific CRM systems.</p>
                 ) : (
                   <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-1 bg-black/10 rounded-lg border border-white/2">
                     {keysList.map(key => (
@@ -387,24 +387,24 @@ export default function Options() {
             <section className="glass-panel rounded-xl p-5 flex flex-col gap-4">
               <div className="flex items-center gap-2 border-b border-white/5 pb-2">
                 <ShieldAlert className="w-4 h-4 text-cyan-400" />
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Маскирование Персональных Данных (PII)</h2>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Personally Identifiable Information (PII) Masking</h2>
               </div>
               
               <div className="flex flex-col gap-2">
-                <label className="text-xs text-slate-400 font-semibold text-slate-300">Встроенные PII-маски (активны по умолчанию):</label>
+                <label className="text-xs text-slate-400 font-semibold text-slate-300">Built-in PII Masks (active by default):</label>
                 <p className="text-[10px] text-slate-400 leading-normal">
-                  Для соответствия требованиям GDPR / 152-ФЗ следующие типы полей маскируются полностью (`***`): 
+                  To comply with privacy laws (GDPR, etc.), the following field types are fully masked (`***`): 
                   <code className="text-slate-200 bg-slate-900 px-1 py-0.5 rounded mx-1 font-mono">password</code>, 
                   <code className="text-slate-200 bg-slate-900 px-1 py-0.5 rounded mx-1 font-mono">card</code>, 
                   <code className="text-slate-200 bg-slate-900 px-1 py-0.5 rounded mx-1 font-mono">cvv</code>, 
                   <code className="text-slate-200 bg-slate-900 px-1 py-0.5 rounded mx-1 font-mono">cc_</code>.
-                  Поля email и телефонов маскируются частично для демонстрации передачи формата.
+                  Email and phone fields are partially masked to demonstrate formatting.
                 </p>
               </div>
 
               {/* Custom PII Keys Builder */}
               <div className="flex flex-col gap-3 mt-1">
-                <label className="text-xs text-slate-400">Ваши кастомные поля для маскирования (например, inn, passport, age):</label>
+                <label className="text-xs text-slate-400">Your custom fields to mask (e.g. passport, ssn, age):</label>
                 
                 {/* Form to add */}
                 <form onSubmit={handleAddPIIKey} className="flex gap-2">
@@ -412,20 +412,20 @@ export default function Options() {
                     type="text"
                     value={newPIIKey}
                     onChange={(e) => setNewPIIKey(e.target.value)}
-                    placeholder="Например: passport, secret_field..."
+                    placeholder="e.g. passport, secret_field..."
                     className="flex-1 bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-slate-300 focus:outline-none focus:border-cyan-500"
                   />
                   <button 
                     type="submit"
                     className="px-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
                   >
-                    <Plus className="w-4 h-4" /> Добавить
+                    <Plus className="w-4 h-4" /> Add
                   </button>
                 </form>
 
                 {/* Custom PII keys list */}
                 {piiList.length === 0 ? (
-                  <p className="text-[10px] text-slate-500 italic">Список кастомных PII масок пуст. Любые нестандартные поля будут отправлены как есть.</p>
+                  <p className="text-[10px] text-slate-500 italic">Custom PII mask list is empty. Unlisted fields will be sent unmasked.</p>
                 ) : (
                   <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-1 bg-black/10 rounded-lg border border-white/2">
                     {piiList.map(key => (
@@ -452,14 +452,14 @@ export default function Options() {
               <div className="flex items-center justify-between border-b border-white/5 pb-2">
                 <div className="flex items-center gap-2">
                   <Terminal className="w-4 h-4 text-cyan-400" />
-                  <h2 className="text-sm font-bold text-white uppercase tracking-wider">Журнал Вебхуков</h2>
+                  <h2 className="text-sm font-bold text-white uppercase tracking-wider">Webhook Logs Console</h2>
                 </div>
                 {webhookLogs.length > 0 && (
                   <button 
                     onClick={clearWebhookLogs}
                     className="text-[10px] text-slate-500 hover:text-slate-400 font-medium cursor-pointer"
                   >
-                    Очистить
+                    Clear
                   </button>
                 )}
               </div>
@@ -467,9 +467,9 @@ export default function Options() {
               {webhookLogs.length === 0 ? (
                 <div className="flex flex-col items-center justify-center text-center gap-2 p-10 flex-1 border border-dashed border-white/5 rounded-lg">
                   <Code className="w-8 h-8 text-slate-700" />
-                  <span className="text-xs text-slate-400 font-medium">Консоль пуста</span>
+                  <span className="text-xs text-slate-400 font-medium">Console is Empty</span>
                   <p className="text-[9px] text-slate-500 leading-relaxed max-w-[180px]">
-                    Отправляйте формы на сайтах с включенным Sandbox Mode для наполнения журнала.
+                    Submit forms on sites with Sandbox Mode enabled to populate the logs.
                   </p>
                 </div>
               ) : (
@@ -486,7 +486,7 @@ export default function Options() {
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold text-slate-300">
-                          Форма: {log.formId}
+                          Form: {log.formId}
                         </span>
                         <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${
                           log.status === 'SUCCESS' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
@@ -496,9 +496,9 @@ export default function Options() {
                       </div>
                       
                       <div className="text-[8px] text-slate-400 font-mono flex items-center justify-between">
-                        <span>Время: {log.timestamp}</span>
+                        <span>Time: {log.timestamp}</span>
                         <span className="text-cyan-400 select-none">
-                          {selectedLog?.id === log.id ? 'Скрыть детали' : 'Детали...'}
+                          {selectedLog?.id === log.id ? 'Hide Details' : 'Details...'}
                         </span>
                       </div>
 
@@ -506,23 +506,23 @@ export default function Options() {
                       {selectedLog?.id === log.id && (
                         <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-white/5" onClick={(e) => e.stopPropagation()}>
                           <div className="flex flex-col gap-0.5 text-[8px] font-mono">
-                            <span className="text-slate-500">// URL источника:</span>
+                            <span className="text-slate-500">// Source URL:</span>
                             <a href={log.url} target="_blank" rel="noreferrer" className="text-cyan-300 hover:underline flex items-center gap-0.5 truncate">
                               {log.url} <ExternalLink className="w-2.5 h-2.5 inline" />
                             </a>
                           </div>
 
                           <div className="flex flex-col gap-1 text-[8px] font-mono">
-                            <span className="text-slate-500">// Данные запроса (Payload):</span>
+                            <span className="text-slate-500">// Request Payload:</span>
                             <div className="bg-black/40 rounded p-2 text-slate-300 max-h-32 overflow-y-auto text-[9px]">
                               <pre className="m-0 leading-normal whitespace-pre-wrap">{JSON.stringify(log.payload, null, 2)}</pre>
                             </div>
                           </div>
 
                           <div className="flex flex-col gap-1 text-[8px] font-mono">
-                            <span className="text-slate-500">// Ответ сервера:</span>
+                            <span className="text-slate-500">// Server Response:</span>
                             <div className="bg-black/40 rounded p-2 text-slate-300 max-h-20 overflow-y-auto text-[9px] break-all">
-                              {log.responseText || 'Пустой ответ'}
+                              {log.responseText || 'Empty response'}
                             </div>
                           </div>
                         </div>

@@ -1,7 +1,7 @@
 import { calculateHealthScore } from './src/popup/store.js';
 import assert from 'assert';
 
-console.log('=== Запуск тестов алгоритма Health Score ===\n');
+console.log('=== Running Health Score Algorithm Tests ===\n');
 
 // Mock data helper
 const createMockData = ({
@@ -42,9 +42,9 @@ try {
   const result = calculateHealthScore(data.forms, data.redirects, data.storages, data.cookies, data.url);
   assert.strictEqual(result.score, 100);
   assert.strictEqual(result.penalties.length, 0);
-  console.log('✅ Тест 1: Идеальная конфигурация возвращает 100 баллов.');
+  console.log('✅ Test 1: Perfect configuration returns 100 points.');
 } catch (e) {
-  console.error('❌ Тест 1 провален:', e.message);
+  console.error('❌ Test 1 failed:', e.message);
 }
 
 // Test Case 2: Missing UTM hidden fields in form (-40)
@@ -68,9 +68,9 @@ try {
   const result = calculateHealthScore(data.forms, data.redirects, data.storages, data.cookies, data.url);
   assert.strictEqual(result.score, 60); // 100 - 40
   assert.strictEqual(result.penalties[0].type, 'critical');
-  console.log('✅ Тест 2: Отсутствие скрытых полей при наличии UTM в URL возвращает 60 баллов (-40).');
+  console.log('✅ Test 2: Missing hidden fields when UTM in URL returns 60 points (-40).');
 } catch (e) {
-  console.error('❌ Тест 2 провален:', e.message);
+  console.error('❌ Test 2 failed:', e.message);
 }
 
 // Test Case 3: Redirect stripped UTM tail (-40)
@@ -103,10 +103,10 @@ try {
   // Here, we have redirect penalty (-40) and no utm in url but form has no tracking slots penalty (-15)
   // Let's verify score: 100 - 40 (redirect) - 15 (no slots for capturing) = 45
   assert.strictEqual(result.score, 45);
-  assert.ok(result.penalties.some(p => p.type === 'critical' && p.label.includes('Редирект')));
-  console.log('✅ Тест 3: Обрыв меток при редиректе корректно штрафует (-40).');
+  assert.ok(result.penalties.some(p => p.type === 'critical' && p.label.includes('Redirect')));
+  console.log('✅ Test 3: UTM stripped by redirect correctly penalizes (-40).');
 } catch (e) {
-  console.error('❌ Тест 3 провален:', e.message);
+  console.error('❌ Test 3 failed:', e.message);
 }
 
 // Test Case 4: Hidden fields are present, but their values are empty (-30)
@@ -131,15 +131,12 @@ try {
   const result = calculateHealthScore(data.forms, data.redirects, data.storages, data.cookies, data.url);
   
   // It has the slots, but they are empty: -30 (empty slots)
-  // Wait, let's check: does it trigger the -40 critical penalty too?
-  // In our logic, since 'utm_source' is found in form inputs list, it is NOT considered missing.
-  // So it only triggers the -30 high penalty.
   // Let's verify score: 100 - 30 = 70
   assert.strictEqual(result.score, 70);
   assert.strictEqual(result.penalties[0].type, 'high');
-  console.log('✅ Тест 4: Скрытые поля найдены, но пусты (-30).');
+  console.log('✅ Test 4: Hidden fields found but empty (-30).');
 } catch (e) {
-  console.error('❌ Тест 4 провален:', e.message);
+  console.error('❌ Test 4 failed:', e.message);
 }
 
 // Test Case 5: Missing web analytics cookies (_ga, _ym_uid) (-10)
@@ -160,9 +157,9 @@ try {
   const result = calculateHealthScore(data.forms, data.redirects, data.storages, data.cookies, data.url);
   assert.strictEqual(result.score, 90); // 100 - 10
   assert.strictEqual(result.penalties[0].type, 'warning');
-  console.log('✅ Тест 5: Отсутствие кук веб-аналитики штрафует на 10 баллов.');
+  console.log('✅ Test 5: Missing web analytics cookies penalizes 10 points.');
 } catch (e) {
-  console.error('❌ Тест 5 провален:', e.message);
+  console.error('❌ Test 5 failed:', e.message);
 }
 
 // Test Case 6: Script detected but not initialized (-10)
@@ -199,10 +196,10 @@ try {
   
   assert.strictEqual(result.score, 90); // 100 - 10 (GTM loading failure)
   assert.strictEqual(result.penalties[0].type, 'warning');
-  assert.ok(result.penalties[0].label.includes('Google Tag Manager не инициализирован'));
-  console.log('✅ Тест 6: Скрипт обнаружен, но не инициализирован, дает штраф -10 баллов.');
+  assert.ok(result.penalties[0].label.includes('Google Tag Manager not initialized'));
+  console.log('✅ Test 6: Script detected but not initialized penalizes -10 points.');
 } catch (e) {
-  console.error('❌ Тест 6 провален:', e.message);
+  console.error('❌ Test 6 failed:', e.message);
 }
 
 // Test Case 7: Case-Insensitive UTM parameter parsing
@@ -227,9 +224,9 @@ try {
   const result = calculateHealthScore(data.forms, data.redirects, data.storages, data.cookies, data.url);
   assert.strictEqual(result.score, 100);
   assert.strictEqual(result.penalties.length, 0);
-  console.log('✅ Тест 7: Регистронезависимое сопоставление UTM-меток работает корректно.');
+  console.log('✅ Test 7: Case-insensitive UTM parameter matching works correctly.');
 } catch (e) {
-  console.error('❌ Тест 7 провален:', e.message);
+  console.error('❌ Test 7 failed:', e.message);
 }
 
 // Test Case 8: Robustness check with undefined/null arguments
@@ -240,9 +237,9 @@ try {
   // Missing analytics cookies penalty (-10) is still expected because cookies array is resolved to empty fallback
   assert.strictEqual(result.score, 90);
   assert.strictEqual(result.penalties[0].type, 'warning');
-  console.log('✅ Тест 8: Устойчивость к отсутствующим/null аргументам проверена успешно.');
+  console.log('✅ Test 8: Robustness to missing/null arguments verified successfully.');
 } catch (e) {
-  console.error('❌ Тест 8 провален:', e.message);
+  console.error('❌ Test 8 failed:', e.message);
 }
 
-console.log('\n=== Тестирование завершено! ===');
+console.log('\n=== Testing Complete! ===');

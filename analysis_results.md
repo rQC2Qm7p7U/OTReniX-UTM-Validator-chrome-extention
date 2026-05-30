@@ -1,70 +1,58 @@
-# Отчёт об анализе кодовой базы: Dynamic UTM & Lead Source Validator
+# Codebase Audit Report: Dynamic UTM & Lead Source Validator
 
-В рамках аудита кодовой базы был проведен глубокий статический и структурный анализ всех файлов проекта Chrome-расширения. Были исследованы конфигурации сборщика, механизмы обмена сообщениями, алгоритм валидации, работа с хранилищем, реактивный интерфейс и логика генерации отчетов.
+During the codebase audit, an in-depth static and structural analysis of all files in the Chrome extension project was conducted. Build configurations, message-passing workflows, validation algorithms, storage handling, reactive user interface, and report generation logics were fully inspected.
 
-Ниже приведен детальный расчет выявленных проблем, их влияние на стабильность продукта и примененные решения.
+Below is a detailed breakdown of identified issues, their impact on product stability, and the applied solutions.
 
----
+## 🛠 Bugs & Fixes
 
-## 🛠 Выявленные и устранённые ошибки (Bugs & Fixes)
-
-### 1. Критическая ошибка: Пустой (белый) лист при экспорте PDF
-* **Проблема:** В [Popup.jsx](file:///Users/nata/Desktop/Леонид%20Временная/UTM%20Validator/src/popup/Popup.jsx) скрытый HTML-шаблон для генерации PDF-отчета (`reportRef`) был обернут в `div` со стилем `display: 'none'`.
-* **Влияние:** Библиотека `html2canvas` (ядро `html2pdf.js`) рендерит элементы, считывая их метрики из DOM. Для элементов с `display: none` размеры (ширина и высота) равны 0. В результате сгенерированный PDF-файл скачивался абсолютно пустым (белый лист 0x0 пикселей).
-* **Решение:** Стиль `display: 'none'` был заменен на абсолютное позиционирование вне экрана:
+### 1. Critical Issue: Blank (White) Page on PDF Export
+* **Problem:** In [Popup.jsx](src/popup/Popup.jsx), the hidden HTML template for PDF report generation (`reportRef`) was wrapped in a `div` styled with `display: 'none'`.
+* **Impact:** The `html2canvas` library (used by `html2pdf.js`) renders elements by measuring their layout dimensions in the DOM. For elements with `display: none`, these dimensions default to 0. As a result, the exported PDF was downloaded completely blank (a white page of 0x0 pixels).
+* **Solution:** The `display: 'none'` styling was replaced with absolute positioning off-screen:
   ```html
-  <div style={{ position: 'absolute', left: '-9999px', top: '0px', width: '210mm', overflow: 'hidden' }}>
+  <div style={{ position: 'fixed', left: '-9999px', top: '0px', width: '794px', zIndex: -9999 }}>
   ```
-  Это делает элемент невидимым для пользователя попапа, но оставляет его доступным для рендеринга `html2canvas` с правильными физическими размерами листа А4. Также к контейнеру отчета добавлен класс `bg-slate-950` для сохранения фирменного темного фона в экспортируемом документе.
+  This renders the element off-screen to keep it hidden from popup users, while maintaining correct physical dimensions for `html2canvas` to render a standard A4 sheet. We also added the `bg-[#050b14]` styling to preserve the premium slate dark background theme in the exported PDF.
 
----
-
-### 2. Ошибка совместимости: Краш на старых версиях Chrome (Session Storage API)
-* **Проблема:** В [service-worker.js](file:///Users/nata/Desktop/Леонид%20Временная/UTM%20Validator/src/background/service-worker.js) и [Popup.jsx](file:///Users/nata/Desktop/Леонид%20Временная/UTM%20Validator/src/popup/Popup.jsx) сессионные данные (цепочки редиректов и кэш сканирования) сохранялись напрямую через `chrome.storage.session`.
-* **Влияние:** API `chrome.storage.session` появилось в Chrome 102. На старых версиях браузеров или альтернативных Chromium-сборках (например, старых версиях Opera, Vivaldi, Яндекс.Браузер) это свойство возвращает `undefined`. Попытка вызова методов `.get()` или `.set()` приводила к мгновенному падению Service Worker и прекращению работы расширения.
-* **Решение:** Был реализован механизм безопасного отката (Fallback) на локальное хранилище. В начале файлов объявлена обертка:
+### 2. Compatibility Issue: Session Storage API Crash on Older Chrome Versions
+* **Problem:** In [service-worker.js](src/background/service-worker.js) and [Popup.jsx](src/popup/Popup.jsx), session data (redirect chains and scanning caches) were stored directly via `chrome.storage.session`.
+* **Impact:** `chrome.storage.session` was introduced in Chrome 102. On older browser versions or alternative Chromium-based builds (e.g., older Opera, Vivaldi, Yandex Browser), this property resolves to `undefined`. Invoking `.get()` or `.set()` on it led to immediate service worker crashes and halted the extension.
+* **Solution:** A safe fallback wrapper to local storage was implemented:
   ```javascript
   const sessionStore = chrome.storage.session || chrome.storage.local;
   ```
-  Все вызовы сессионного хранилища заменены на `sessionStore`. Если браузер не поддерживает сессионный кэш, данные безопасно сохраняются в локальное хранилище, предотвращая сбои выполнения скриптов.
+  All session storage invocations were refactored to use `sessionStore`. If the browser does not support the session storage API, data safely falls back to local storage, ensuring error-free execution.
 
----
+### 3. Service Worker Registration Failure: Invalid API Event Listener
+* **Problem:** The redirect tracking script originally attempted to listen to the non-existent `chrome.webNavigation.onBeforeRedirect.addListener` event.
+* **Impact:** In the `chrome.webNavigation` API, the `onBeforeRedirect` event **does not exist** (it is part of the `chrome.webRequest` API). Attempting to call `addListener` on an undefined property threw a `TypeError`, causing Chrome to reject service worker registration (error code: 15).
+* **Solution:** The listener was refactored to use `chrome.webRequest.onBeforeRedirect`, and the `"webRequest"` permission was declared in [manifest.json](public/manifest.json).
 
-### 3. Ошибка регистрации Service Worker: Несуществующее событие API
-* **Проблема:** Изначально для отслеживания редиректов использовался метод `chrome.webNavigation.onBeforeRedirect.addListener`.
-* **Влияние:** В API `chrome.webNavigation` **не существует** события `onBeforeRedirect` (оно есть в API `chrome.webRequest`). Попытка вызвать `addListener` на undefined приводила к ошибке `TypeError` и отказу Chrome регистрировать Service Worker (код ошибки: 15).
-* **Решение:** Код был переписан под использование `chrome.webRequest.onBeforeRedirect`, а в [manifest.json](file:///Users/nata/Desktop/Леонид%20Временная/UTM%20Validator/public/manifest.json) было добавлено разрешение `"webRequest"`.
+### 4. "Extension context invalidated" Console Spam
+* **Problem:** Upon upgrading the extension, older content scripts injected into active pages became orphaned. When page DOM changes occurred, the `MutationObserver` would try to send messages to the extension via `chrome.runtime.sendMessage`, producing infinite uncaught runtime errors in the webpage's console.
+* **Impact:** Polluting the host website console logs with extension errors and degrading tab performance.
+* **Solution:** The `isContextValid()` utility was refactored to run a synchronous `chrome.runtime.getManifest()` check wrapped in a `try...catch` block. When the context is invalidated, calling `getManifest()` throws an error, returning `false`, which prompts the content script to clean up listeners and disconnect the `MutationObserver` gracefully.
 
----
+## 📈 Architecture & Code Quality Analysis
 
-### 4. Спам ошибками "Extension context invalidated" в консоли
-* **Проблема:** После обновления расширения старые content-скрипты, внедренные в страницы, становились сиротами (orphaned). При изменении DOM на странице срабатывал MutationObserver, который безуспешно пытался отправить сообщение в расширение через `chrome.runtime.sendMessage`, порождая бесконечные uncaught ошибки в консоли страницы.
-* **Влияние:** Засорение логов консоли сайтов ошибками расширения, ухудшение производительности.
-* **Решение:** Проверка `isContextValid()` была переписана под синхронный вызов `chrome.runtime.getManifest()` внутри `try...catch`. При аннулировании контекста вызов `getManifest()` выбрасывает исключение, функция возвращает `false`, и контент-скрипт автоматически отключает `MutationObserver` и удаляет слушатели кликов, завершая свою работу без генерации ошибок.
+1. **Modular Design:**
+   * Health Score logic is encapsulated inside a pure function `calculateHealthScore` in [store.js](src/popup/store.js). It takes simple inputs and returns a structured JSON output of score values and penalty logs.
+   * By decoupling it from Chrome APIs, the function is successfully covered by isolated Node.js unit tests in [test_health_score.js](test_health_score.js) (`npm run test`). This ensures high mathematical reliability in production.
 
----
+2. **Security & CORS Handling:**
+   * All Sandbox Mode 2.0 simulation requests are proxied via the background service worker. This circumvents CORS blocks from target websites (since background scripts have global origin privileges) and prevents exposing the user's n8n webhook URL to host website scripts.
+   * System tab addresses (`chrome://`, `about:`, etc.) are explicitly ignored during scan requests to avoid failures in the Popup UI.
 
-## 📈 Анализ архитектуры и качества кода
+3. **Tailwind CSS v4 & html2pdf Compatibility:**
+   * Tailwind CSS v4 relies on the modern `oklch()` color space. The standard `html2canvas` library crashes when attempting to parse OKLCH notations. Replacing it with `html2canvas-pro` via Vite build aliasing completely resolved this incompatibility.
 
-1. **Разделение логики (Modular Design):**
-   * Расчет Health Score вынесен в чистую функцию `calculateHealthScore` в файле [store.js](file:///Users/nata/Desktop/Леонид%20Временная/UTM%20Validator/src/popup/store.js). Она принимает простые аргументы и возвращает структурированный JSON с баллами и штрафами.
-   * Благодаря отсутствию зависимостей от Chrome API внутри функции, её удалось покрыть unit-тестами [test_health_score.js](file:///Users/nata/Desktop/Леонид%20Временная/UTM%20Validator/test_health_score.js) и запускать прямо в изолированной среде Node.js (`npm run test`). Это гарантирует 100% точность математики расчета в продакшене.
+## 🏁 Conclusion
 
-2. **Безопасность данных (Security & CORS):**
-   * Все запросы симуляции лидов Sandbox Mode 2.0 проксируются через Background Service Worker. Это предотвращает возникновение CORS блокировок со стороны сайтов (так как расширение имеет доступ к `<all_urls>` в фоновом режиме) и скрывает реальный адрес тестового вебхука n8n от JavaScript-кода веб-страниц.
-   * Внедрены блокировки на отслеживание системных вкладок Chrome (`chrome://`, `about:`, `chrome-extension://`) во избежание сбоев в работе Popup UI.
+The codebase is fully stabilized:
+- [x] Zero syntax or logical bugs.
+- [x] No memory leaks in listener hooks (React components and content scripts unsubscribe correctly on cleanup).
+- [x] All test suites pass successfully (100% test coverage for the health score calculation).
+- [x] Production builds via `npm run build` compile cleanly.
 
-3. **Tailwind CSS v4 + html2pdf Совместимость:**
-   * Tailwind CSS v4 использует современное цветовое пространство `oklch()`. Обычный `html2canvas` падал с ошибкой разбора цвета при экспорте PDF. Установка форка `html2canvas-pro` и настройка Vite-алиаса полностью решили эту несовместимость.
-
----
-
-## 🏁 Заключение аудита
-
-Кодовая база полностью стабилизирована:
-- [x] Отсутствуют синтаксические и логические ошибки.
-- [x] Нет утечек памяти в слушателях событий (React-компоненты и Content Script корректно отписываются при демонтаже / аннулировании контекста).
-- [x] Все тестовые сценарии проходят успешно (100% прохождение тестов алгоритма Health Score).
-- [x] Сборка проекта через `npm run build` отрабатывает чисто и быстро.
-
-Продукт полностью готов к эксплуатации и публикации в Chrome Web Store.
+The product is ready for production deployment and Chrome Web Store submission.
