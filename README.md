@@ -13,6 +13,9 @@
   <a href="https://otrenix.com" target="_blank">
     <img src="https://img.shields.io/badge/Website-otrenix.com-6366f1?style=for-the-badge&logo=googlechrome&logoColor=white" alt="OTReniX Website" />
   </a>
+  <a href="https://www.linkedin.com/in/leoshw/" target="_blank">
+    <img src="https://img.shields.io/badge/Author-LeoWorks-0077b5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LeoWorks on LinkedIn" />
+  </a>
 </p>
 
 <p align="center">
@@ -227,6 +230,18 @@ MIT License — free to use, modify, and distribute.
 
 *Helping Cybersecurity, Industrial, and B2B SaaS companies build measurable pipeline.*
 
-[![OTReniX](https://img.shields.io/badge/🌐_Visit-otrenix.com-0ea5e9?style=for-the-badge)](https://otrenix.com)
+<br>
+
+**Designed & Engineered by [LeoWorks](https://www.linkedin.com/in/leoshw/)**
+
+<p align="center">
+  <a href="https://otrenix.com">
+    <img src="https://img.shields.io/badge/🌐_Visit-otrenix.com-0ea5e9?style=for-the-badge" alt="OTReniX" />
+  </a>
+  &nbsp;
+  <a href="https://www.linkedin.com/in/leoshw/">
+    <img src="https://img.shields.io/badge/LinkedIn-LeoWorks-0077b5?style=for-the-badge&logo=linkedin&logoColor=white" alt="LeoWorks LinkedIn" />
+  </a>
+</p>
 
 </div>
