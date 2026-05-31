@@ -21,7 +21,8 @@ export default function DashboardTab({
   generatingPdf,
   handleAutoFillMocks,
   copyToClipboardDevs,
-  downloadPdfReport
+  downloadPdfReport,
+  setActiveTab
 }) {
   const theme = useMemo(() => {
     if (healthScore >= 80) return { stroke: '#10b981', text: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' };
@@ -114,22 +115,34 @@ export default function DashboardTab({
             const detected = (detectedScripts && detectedScripts[sys.key]) || initialized;
             
             let statusText = 'Not Found';
-            let statusClass = 'border-white/5 text-slate-500 bg-white/2';
+            let dotClass = 'bg-slate-600';
             
             if (detected) {
               if (initialized) {
                 statusText = 'Active';
-                statusClass = 'border-emerald-500/20 text-emerald-400 bg-emerald-500/5';
+                dotClass = 'bg-emerald-500 shadow-[0_0_6px_#10b981]';
               } else {
                 statusText = 'Failed';
-                statusClass = 'border-red-500/25 text-red-400 bg-red-500/5 animate-pulse';
+                dotClass = 'bg-red-500 shadow-[0_0_6px_#ef4444]';
               }
             }
             
             return (
-              <div key={sys.name} className={`border rounded-lg p-2 flex flex-col gap-0.5 text-center ${statusClass}`}>
-                <span className="text-[10px] font-bold">{sys.name}</span>
-                <span className="text-[8px] font-medium">{statusText}</span>
+              <div 
+                key={sys.name} 
+                className={`border rounded-lg p-2 flex items-center justify-between gap-1 bg-slate-900/20 backdrop-blur-sm transition-all duration-300 ${
+                  detected
+                    ? initialized
+                      ? 'border-emerald-500/20 text-emerald-400'
+                      : 'border-red-500/25 text-red-400'
+                    : 'border-white/5 text-slate-500 bg-white/2'
+                }`}
+              >
+                <div className="flex flex-col items-start text-left">
+                  <span className="text-[10px] font-bold text-slate-200 leading-tight">{sys.name}</span>
+                  <span className="text-[7.5px] font-semibold leading-none">{statusText}</span>
+                </div>
+                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotClass} ${detected ? 'animate-pulse' : ''}`} />
               </div>
             );
           })}
@@ -149,23 +162,36 @@ export default function DashboardTab({
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {penalties.map((item, idx) => (
-              <div key={idx} className="glass-panel rounded-lg p-3 flex gap-3 border-l-3 items-start" style={{ borderLeftColor: item.type === 'critical' ? '#ef4444' : item.type === 'high' ? '#f97316' : item.type === 'medium' ? '#eab308' : '#3b82f6' }}>
-                <div className="mt-0.5">
-                  {item.type === 'critical' && <AlertCircle className="w-4 h-4 text-red-500 animate-pulse-neon" />}
-                  {item.type === 'high' && <AlertTriangle className="w-4 h-4 text-orange-500" />}
-                  {item.type === 'medium' && <AlertTriangle className="w-4 h-4 text-yellow-500" />}
-                  {item.type === 'warning' && <AlertCircle className="w-4 h-4 text-blue-500" />}
-                </div>
-                <div className="flex-1 flex flex-col gap-0.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-slate-200 leading-none">{item.label}</span>
-                    <span className="text-[9px] font-black text-slate-400">-{item.penalty} {item.penalty === 1 ? 'point' : 'points'}</span>
+            {penalties.map((item, idx) => {
+              const isUtmMissingPenalty = item.label && item.label.toLowerCase().includes('utm missing in forms');
+              
+              return (
+                <div key={idx} className="glass-panel rounded-lg p-3 flex gap-3 border-l-3 items-start" style={{ borderLeftColor: item.type === 'critical' ? '#ef4444' : item.type === 'high' ? '#f97316' : item.type === 'medium' ? '#eab308' : '#3b82f6' }}>
+                  <div className="mt-0.5">
+                    {item.type === 'critical' && <AlertCircle className="w-4 h-4 text-red-500 animate-pulse-neon" />}
+                    {item.type === 'high' && <AlertTriangle className="w-4 h-4 text-orange-500" />}
+                    {item.type === 'medium' && <AlertTriangle className="w-4 h-4 text-yellow-500" />}
+                    {item.type === 'warning' && <AlertCircle className="w-4 h-4 text-blue-500" />}
                   </div>
-                  <p className="text-[10px] text-slate-400 leading-normal">{item.desc}</p>
+                  <div className="flex-1 flex flex-col gap-0.5 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-slate-200 leading-none">{item.label}</span>
+                      <span className="text-[9px] font-black text-slate-400">-{item.penalty} {item.penalty === 1 ? 'point' : 'points'}</span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 leading-normal">{item.desc}</p>
+                    
+                    {isUtmMissingPenalty && setActiveTab && (
+                      <button 
+                        onClick={() => setActiveTab('tree')}
+                        className="mt-1.5 px-2 py-1 bg-cyan-500/10 border border-cyan-500/20 hover:bg-cyan-500/20 text-cyan-400 rounded text-[9px] font-bold flex items-center gap-1 transition-colors cursor-pointer w-fit"
+                      >
+                        👉 View details in Forms Tree
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

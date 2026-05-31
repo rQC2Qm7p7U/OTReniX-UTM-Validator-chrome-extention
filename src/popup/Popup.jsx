@@ -360,6 +360,7 @@ export default function Popup() {
             handleAutoFillMocks={handleAutoFillMocks}
             copyToClipboardDevs={copyToClipboardDevs}
             downloadPdfReport={downloadPdfReport}
+            setActiveTab={setActiveTab}
           />
         )}
 
