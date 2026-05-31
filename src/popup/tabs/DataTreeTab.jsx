@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { DEFAULT_B2B_KEYS } from '../store';
 
-const generatePromptText = (form, fIdx, allKeys) => {
+const generatePromptText = (form, fIdx, allKeys, currentUrl, cookies, detectedScripts) => {
   const attributionInputs = [];
   form.inputs.forEach(input => {
     const inputNameStr = typeof input.name === 'string' ? input.name : '';
@@ -27,6 +27,31 @@ const generatePromptText = (form, fIdx, allKeys) => {
     });
   });
 
+  // Filter and extract tracking cookies for metadata representation
+  const trackingCookies = (cookies || []).filter(c => {
+    const nameLower = c.name.toLowerCase();
+    return nameLower.includes('utm') || 
+           nameLower.includes('_ga') || 
+           nameLower.includes('_ym') || 
+           nameLower.includes('hubspot') || 
+           nameLower.includes('gclid') || 
+           nameLower.includes('mkto') ||
+           nameLower.includes('pi_opt');
+  });
+
+  // Extract detected scripts list
+  const activeScripts = [];
+  if (detectedScripts) {
+    if (detectedScripts.gtm) activeScripts.push("Google Tag Manager (GTM)");
+    if (detectedScripts.ga4) activeScripts.push("Google Analytics 4 (GA4)");
+    if (detectedScripts.ym) activeScripts.push("Yandex Metrika");
+    if (detectedScripts.fbq) activeScripts.push("Facebook Pixel");
+    if (detectedScripts.ttq) activeScripts.push("TikTok Pixel");
+    if (detectedScripts.hsq) activeScripts.push("HubSpot Tracker");
+    if (detectedScripts.mkt) activeScripts.push("Marketo Munchkin");
+    if (detectedScripts.prd) activeScripts.push("Pardot Tracker");
+  }
+
   return `You are a Staff B2B Marketing Attribution Engineer. Your task is to write a highly professional, enterprise-ready, defensive JavaScript patch to capture UTM campaign parameters and populate them into the target form specified below.
 
 Form Details:
@@ -36,7 +61,14 @@ Form Details:
 - Action: ${form.action || 'none'}
 - Inside Shadow DOM: ${form.isShadow ? 'Yes' : 'No'}
 - Inputs:
-${form.inputs.map(inp => `  * name="${inp.name || ''}", id="${inp.id || ''}", type="${inp.type || ''}", hidden=${inp.isHidden ? 'Yes' : 'No'}`).join('\n')}
+${form.inputs.map(inp => `  * name="${inp.name || ''}", id="${inp.id || ''}", class="${inp.className || ''}", type="${inp.type || ''}", hidden=${inp.isHidden ? 'Yes' : 'No'}`).join('\n')}
+
+Contextual Page Metadata:
+- Current Page URL: ${currentUrl || 'unknown'}
+- Detected Active Scripts/Systems: ${activeScripts.length > 0 ? activeScripts.join(', ') : 'none'}
+- Active Cookies (Names): ${cookies && cookies.length > 0 ? cookies.map(c => c.name).join(', ') : 'none'}
+- Active Attribution Cookies (sampled formatting):
+${trackingCookies.length > 0 ? trackingCookies.map(c => `  * ${c.name}: "${c.value.substring(0, 30)}${c.value.length > 30 ? '...' : ''}"`).join('\n') : '  * none'}
 
 Required Attributions to capture:
 ${allKeys.join(', ')}
@@ -56,6 +88,9 @@ Your JavaScript code must adhere to these strict enterprise rules:
 5. **Dynamic DOM Resolution (Dynamic Forms)**: B2B forms are often loaded dynamically or rendered lazily. Use a polling function (retrying up to 5 times at 500ms intervals) or a MutationObserver to locate the form and inputs if they aren't immediately present.
 6. **No Cumulative Layout Shift (CLS)**: Appended hidden inputs must have zero impact on the visual page structure. Ensure they use type="hidden", or are hidden with inline CSS (display: none !important) and appended cleanly to the bottom of the form.
 7. **JSDoc and Style Guidelines**: Write clean, modern, well-commented ES6+ code. Use JSDoc comments to document key utility functions.
+8. **Specialized Integration Strategy**:
+   * If HubSpot is detected on the page, check for HubSpot form-specific classes or API hooks.
+   * If classes are present on the fields, prefer querySelectors matching those specific classes when names or IDs are dynamic.
 
 Format: Return ONLY the JavaScript code block wrapped in \`\`\`javascript ... \`\`\` and a brief 2-sentence explanation of where to paste it. Do not include any other conversational text.`;
 };
@@ -65,13 +100,16 @@ export default function DataTreeTab({
   customB2BKeys = [],
   triggerScanAndFetch,
   handleHighlightForm,
-  geminiApiKey = ''
+  geminiApiKey = '',
+  currentUrl = '',
+  cookies = [],
+  detectedScripts = {}
 }) {
   const allKeys = [...new Set(['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'li_fat_id', 'hubspotutk', '_mkto_trk', 'pi_opt_in', ...customB2BKeys])];
   const [aiPatches, setAiPatches] = useState({});
 
   const handleCopyPrompt = (fIdx, form) => {
-    const promptText = generatePromptText(form, fIdx, allKeys);
+    const promptText = generatePromptText(form, fIdx, allKeys, currentUrl, cookies, detectedScripts);
     navigator.clipboard.writeText(promptText).then(() => {
       setAiPatches(prev => ({
         ...prev,
@@ -94,7 +132,7 @@ export default function DataTreeTab({
       [fIdx]: { isLoading: true, error: null, result: null }
     }));
 
-    const promptText = generatePromptText(form, fIdx, allKeys);
+    const promptText = generatePromptText(form, fIdx, allKeys, currentUrl, cookies, detectedScripts);
 
     const onSuccess = (text) => {
       setAiPatches(prev => ({
@@ -309,13 +347,25 @@ export default function DataTreeTab({
                           <div key={idx} className={`border rounded-lg p-2 flex items-center justify-between text-[10px] ${highlightClass}`}>
                             <div className="flex flex-col gap-0.5 flex-1 min-w-0 pr-2">
                               <span className="font-semibold text-slate-200 truncate">{inputNameStr || 'unnamed'}</span>
-                              <div className="flex items-center gap-1.5 text-[8px] text-slate-400">
+                              <div className="flex flex-wrap items-center gap-1 text-[8px] text-slate-400">
                                 <span>Type: {inputTypeStr}</span>
                                 <span>•</span>
                                 <span>{input.isHidden ? 'Hidden' : 'Visible'}</span>
+                                {input.id && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="truncate">id: {input.id}</span>
+                                  </>
+                                )}
+                                {input.className && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="truncate" title={input.className}>class: {input.className}</span>
+                                  </>
+                                )}
                               </div>
                             </div>
-                            <div className="flex flex-col items-end min-w-[120px]">
+                            <div className="flex flex-col items-end min-w-[100px] shrink-0">
                               <span className="text-[9px] font-mono truncate w-full text-right" title={inputValueStr}>
                                 {inputValueStr ? `value: "${inputValueStr}"` : 'value: ""'}
                               </span>
@@ -353,8 +403,10 @@ export default function DataTreeTab({
                             <div className="text-[8.5px] font-mono text-slate-400 truncate" title={inputValueStr}>
                               val: <span className="text-slate-300">{inputValueStr ? `"${inputValueStr}"` : '""'}</span>
                             </div>
-                            <div className="text-[7px] text-slate-500">
-                              {input.isHidden ? '👁️ Hidden' : '👀 Visible'}
+                            <div className="text-[7px] text-slate-500 flex flex-col gap-0.5 mt-0.5">
+                              <span>{input.isHidden ? '👁️ Hidden' : '👀 Visible'}</span>
+                              {input.id && <span className="truncate">id: {input.id}</span>}
+                              {input.className && <span className="truncate" title={input.className}>class: {input.className}</span>}
                             </div>
                           </div>
                         );

@@ -373,6 +373,9 @@ export default function Popup() {
             triggerScanAndFetch={triggerScanAndFetch}
             handleHighlightForm={handleHighlightForm}
             geminiApiKey={geminiApiKey}
+            currentUrl={url}
+            cookies={cookies}
+            detectedScripts={detectedScripts}
           />
         )}
 

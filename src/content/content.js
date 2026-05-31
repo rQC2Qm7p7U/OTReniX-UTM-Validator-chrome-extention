@@ -100,6 +100,7 @@ function parseForm(form, isShadow = false) {
     inputs.push({
       id: typeof el.id === 'string' ? el.id : (el.getAttribute && el.getAttribute('id')) || '',
       name: typeof el.name === 'string' ? el.name : (el.getAttribute && el.getAttribute('name')) || '',
+      className: typeof el.className === 'string' ? el.className : (el.getAttribute && el.getAttribute('class')) || '',
       type: typeof el.type === 'string' ? el.type : (el.tagName ? el.tagName.toLowerCase() : 'input'),
       value: typeof el.value === 'string' ? el.value : '',
       placeholder: typeof el.placeholder === 'string' ? el.placeholder : (el.getAttribute && el.getAttribute('placeholder')) || '',
