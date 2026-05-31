@@ -56,5 +56,5 @@ We may update this Privacy Policy to reflect changes in our extension design or 
 ## 7. Contact Us
 
 If you have any questions or privacy inquiries regarding this extension, please contact us at:
-* **Email:** consult@otrenix.com
+* **Email:** hello@otrenix.com
 * **Website:** [https://otrenix.com](https://otrenix.com)
