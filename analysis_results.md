@@ -47,6 +47,10 @@ Below is a detailed breakdown of identified issues, their impact on product stab
 3. **Tailwind CSS v4 & html2pdf Compatibility:**
    * Tailwind CSS v4 relies on the modern `oklch()` color space. The standard `html2canvas` library crashes when attempting to parse OKLCH notations. Replacing it with `html2canvas-pro` via Vite build aliasing completely resolved this incompatibility.
 
+4. **GDPR/CCPA Cookie Consent Verification Integrity:**
+   * The new GDPR prior consent algorithm verifies domain compliance by checking the intersection of tracking/analytics cookies and standard consent cookies.
+   - Expanded unit tests in `test_health_score.js` (Tests 11, 12, 13) to validate compliance, non-compliance scoring, and penalty triggers. This prevents regression issues when refining cookie logic or adding support for new B2B trackers.
+
 ## 🏁 Conclusion
 
 The codebase is fully stabilized:

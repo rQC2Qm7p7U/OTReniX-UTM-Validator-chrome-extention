@@ -160,6 +160,20 @@ This lets the browser resolve element geometry for PDF pages while keeping the t
 
 ---
 
+### 6. GDPR/CCPA Prior Consent Audit
+To protect client domains from high regulatory fines under GDPR and CCPA, the extension implements a prior-consent audit checks loop:
+* **Consent Signature Detection:** The extension monitors active cookies for signatures from leading Consent Management Platforms (CMPs). The matching list in `store.js` targets:
+  - **OneTrust / Optanon:** `optanonconsent`, `optanonalertboxclosed`
+  - **Cookiebot:** `cookieconsent`
+  - **CookieYes:** `cookieyes-consent`
+  - **Other CMPs / Standards:** `cookieconsent_status`, `euconsent-v2`, `gdpr_consent`, `ccpa-consent`
+* **Attribution & Tracker Cookie Registry:** The engine checks for tracking cookies set by analytic tools or advertising pixels (e.g., `_ga`, `_ym_uid`, `_fbp`, `hubspotutk`, `_mkto_trk`).
+* **Compliance Assertions:**
+  - **Compliant:** No tracking cookies are set, OR a tracking cookie is set and a valid CMP consent cookie is also present on the domain.
+  - **Non-Compliant (Prior Consent Violation):** Active tracking cookies are found in storage, but no CMP consent cookies are present. This triggers a `-15 points` deduction and records a High-level warning outlining the specific cookies set prematurely.
+
+---
+
 ## 🛠 Compilation and Debugging
 
 1. Install dependencies:

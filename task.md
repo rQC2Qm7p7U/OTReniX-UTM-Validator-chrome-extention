@@ -1,27 +1,25 @@
-# Implementation Tasks v2.0: Advanced Capabilities
+# GDPR/CCPA Cookie Consent Audit (v3.4)
 
-- `[x]` **Sprint A: User Interface & Infrastructure**
-  - `[x]` Update `manifest.json` (add `"sidePanel"`, register the Side Panel page and list `inject.js` under `web_accessible_resources`)
-  - `[x]` Configure Service Worker (`service-worker.js`) to open the side panel when the action icon is clicked
-  - `[x]` Update the Zustand store (`store.js`) to support White Label configurations, PII keys, and analytics statuses
-  - `[x]` Modify Options Page (`Options.jsx`): design the White Label branding inputs, custom PII filters, and client-side canvas logo compression
-  - `[x]` Modify Popup (`Popup.jsx`): output White Label branding into PDF reports, implement the "Generate UTM" URL injector, and add form highlighting buttons in the Data Tree
-- `[x]` **Sprint B: Interactive DOM Elements**
-  - `[x]` Add a `HIGHLIGHT_FORM` message handler to `content.js` to scroll to forms and apply temporary glowing purple highlights
-- `[x]` **Sprint C: Analytics Diagnostics & Privacy Security**
-  - `[x]` Create `public/inject.js` to check for window analytics properties (GTM, GA4, YM, fbq, ttq, _hsq)
-  - `[x]` Integrate script injection hooks and custom event listeners for `ANALYTICS_DIAGNOSTICS` inside `content.js`
-  - `[x]` Implement configurable PII masking inside `content.js` (accounting for custom keys in settings)
-  - `[x]` Append and verify unit tests in `test_health_score.js`
-- `[x]` **Sprint D: Premium OTReniX Visual Branding**
-  - `[x]` Recolor `Options.jsx` (map former indigo classes to sleek blue and cyan colors)
-  - `[x]` Update highlight visual colors and sandbox alert styling in `content.js`
-  - `[x]` Fine-tune PDF A4 document styling with customized OTReniX gradient palettes in `Popup.jsx`
-  - `[x]` Validate compilation via `npm run build`
-  - `[x]` Execute tests (`node test_health_score.js`) to confirm all checks remain green
-- `[x]` **Sprint E: Lazy-Loaded Analytics Detection Optimization**
-  - `[x]` Add user interaction event listeners (scroll, click, mousemove, keydown, touchstart) in `public/inject.js` to trigger rescans
-  - `[x]` Implement two-way message passing (`TRIGGER_INJECTED_SCAN` and `ANALYTICS_DIAGNOSTICS`) to query Main World states on the fly
-  - `[x]` Adjust `detected` state logic in `src/popup/Popup.jsx` (including PDF report templates) so initialized scripts are automatically marked as found
-  - `[x]` Implement low-level hooks on network requests (`fetch`, `xhr`, `sendBeacon`) inside `inject.js`
-  - `[x]` Implement background traffic logging via `chrome.webRequest.onBeforeRequest` inside `service-worker.js` with data synchronization and cache invalidation on navigation
+## Phase 1 — Core Logic & Calculations (store.js)
+- [x] Add `MARKETING_COOKIE_PATTERNS` and `CONSENT_COOKIE_PATTERNS` definitions to `store.js`.
+- [x] Implement Cookie Consent compliance verification in `calculateHealthScore()`:
+  - Detect present marketing cookies.
+  - Check for active Consent cookies.
+  - Apply **-15 points** penalty and warning list for violations.
+- [x] Run `npm test` to verify logic before UI modifications.
+
+## Phase 2 — Unit Testing (test_health_score.js)
+- [x] Append Test Case 11: GA cookie present with no consent cookie triggers penalty (-15).
+- [x] Append Test Case 12: GA cookie present alongside `CookieConsent` is compliant (no penalty).
+- [x] Append Test Case 13: No cookies present returns compliant status (no penalty).
+- [x] Run `npm test` and ensure all 13 test cases pass cleanly.
+
+## Phase 3 — Dashboard Tab Compliance Panel (DashboardTab.jsx)
+- [x] Add Cookie Consent Compliance panel below the Analytics Systems Audit grid.
+- [x] Style the card dynamically based on compliance state (Green with glowing drop shadows for Compliant, Red with warning animations for Non-Compliant).
+- [x] Display the detected Consent platform names (e.g. OneTrust, Cookiebot, CookieYes) and list any cookies violating GDPR prior consent.
+
+## Phase 4 — PDF Exporter Adjustments (PdfReport.jsx)
+- [x] Display GDPR compliance status card on Page 1 of the executive report.
+- [x] Add support for printing GDPR Prior Consent violations inside the Technical details checklist.
+- [x] Verify compilation with `npm run build` and run a sanity scan.

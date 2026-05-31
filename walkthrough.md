@@ -152,3 +152,119 @@ Fixed an issue where delayed tracking scripts (e.g., loaded after cookie consent
 * **Main World Hooking:** Intercepts outgoing requests by monkey-patching `window.fetch`, `XMLHttpRequest.prototype.open`, and `navigator.sendBeacon` inside `inject.js` to log analytical calls on the fly.
 * **Background Monitoring:** Configured `chrome.webRequest.onBeforeRequest` in `service-worker.js` to capture pixel events originating from third-party iframes and synchronizes statuses with the store.
 * **Navigation Reset:** Redirect queries and network flags are cleared via `chrome.webNavigation.onCommitted` to avoid false positives.
+
+---
+
+## 🛠️ Update v2.5: Sandbox Payload Previews Layout Fix
+* **Problem:** The JSON preview pane inside the Sandbox tab was limited to a maximum height of `64px`, introducing double scrollbars and visual clutter while wasting available space.
+* **Solution:** Refactored the flex grid container structure in [src/popup/Popup.jsx](src/popup/Popup.jsx) to leverage `flex-grow` and `min-h-0`. Submissions log entries and payloads now scale to occupy the entire screen height cleanly.
+
+---
+
+## 🛠️ Update v3.0: 3-Page Executive PDF Audits
+* **Visual Screenshots Integration:** Automatically captures current viewport screenshots via `chrome.tabs.captureVisibleTab`, scaling images to 480px dynamically to include them in generated reports.
+* **Diagnostics Grid:** Renders interactive grids matching the state of GTM, GA4, Yandex.Metrica, Facebook, TikTok, and HubSpot pixels on Page 1.
+* **3-Page Layout Engine:** Uses strict CSS page-breaks to isolate A4 pages cleanly. Page 1 contains the Cover Page and executive score card, Page 2 exposes technical form fields lists and scores breakdown, and Page 3 provides code templates and promotional agency contact cards.
+
+---
+
+## 🛠️ Update v3.1: Code Optimization and Component Splitting
+
+A comprehensive optimization sweep was executed across the codebase to address performance bottle-necks, reduce memory footprint, and split the codebase into clean, modular components:
+
+### 1. Bundle Size & Memory Optimization (Popup.jsx & PdfReport.jsx)
+* **Lazy Loading html2pdf:** Replaced static import of `html2pdf.js` with dynamic `import()`. This removed the ~965 KB library from the main popup bundle, dropping the popup file size from **~1 MB to ~45 KB**. The library is now loaded on-demand only when a user clicks "Download PDF".
+* **Conditional Template Mounting:** Separated the hidden 350-line PDF print layout from the active React tree. It now mounts only when `generatingPdf` is active and unmounts immediately after compilation, preventing unnecessary virtual DOM nodes and memory leaks.
+* **Component Splitting:** Refactored the 1178-line monolith `Popup.jsx` into smaller, atomic modules:
+  * `tabs/DashboardTab.jsx` – encapsulates score indicators, scripts audit grids, and sales recommendations.
+  * `tabs/DataTreeTab.jsx` – renders DOM forms tree list and highlight controls.
+  * `tabs/SandboxTab.jsx` – handles API webhooks simulation workspaces and telemetry consoles.
+  * `PdfReport.jsx` – isolated component for the executive PDF output.
+  * `hooks/useScanData.js` – custom React hook encapsulating tab updates, chrome messaging, auto-fill mock actions, and highlights.
+* **Responsive Viewport Stretching:** Replaced fixed dimensions (`w-[400px] h-[550px]`) in the outer container of `Popup.jsx` with fluid responsive classes (`w-full h-full`). In conjunction with the `h-screen overflow-hidden` CSS styles on the HTML/Body document nodes, this enables the application to automatically stretch across the entire vertical height of the Side Panel viewport, allowing content to resize fluidly without introducing unnecessary scrollbars.
+
+### 2. High-Performance DOM Traversals (content.js)
+* **O(N) Shadow DOM Scanning:** Replaced performance-heavy `querySelectorAll('*')` traversals inside nested shadow roots with `document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT)`, streamlining DOM traversals to linear time complexity.
+* **Computed Style Optimization:** Added cheap, early-return attribute checks (`el.type === 'hidden'`, `el.hasAttribute('hidden')`, `aria-hidden`) before requesting `getComputedStyle`, drastically reducing render-blocking browser layout recalculations.
+* **Filtered Storage I/O:** Restricted storage diagnostics scans on host pages to an allowlist of matching keys (`utm_`, `gclid`, etc.), preventing CPU spikes on sites utilizing heavy local/session storage volumes.
+
+### 3. Store & Event Cycle Optimization (store.js & inject.js & Popup.jsx)
+* **Tab-Scoped Messages:** Scoped state broadcast commands (e.g. toggling sandbox mode) to the active tab `chrome.tabs.query({ active: true, currentWindow: true })` instead of blasting messages to all open browser windows.
+* **Race Condition Elimination:** Removed arbitrary `setTimeout(fetchTabData, 200)` delays. The popup now reactive-updates state immediately by binding to the custom `PAGE_DATA_UPDATED` messaging event.
+* **Storage Listener Protection:** Added a module-level `isStorageListenerRegistered` gate flag in `store.js` to ensure the runtime storage listener is registered exactly once.
+* **Interaction Throttle (inject.js):** Rebuilt user activity event listeners (scroll, mousemove, keydown, click, touchstart). The very first user activity event immediately cleans up all interaction listeners and queues exactly two throttled checks (500ms and 3000ms), eliminating cascading check bursts during mouse movement.
+
+---
+
+## 🛠️ Update v3.2: Visual Enhancements & Dynamic Height PDF Generation
+
+Based on real-world diagnostics testing on `https://otrenix.com/contact/`, a series of visual upgrades and report rendering fixes were implemented:
+
+### 1. Unified Form Fields Grouping & Compact Grid (DataTreeTab.jsx)
+* **Fields Categorization:** Form fields are now logically grouped into two separate blocks:
+  * **Attribution Slots:** Highlighted parameters (`utm_source`, `gclid`, etc.) matching tracking requirements, styled with success (green) or warning (red) borders based on presence.
+  * **Standard Form Fields:** Input elements (name, email, textareas) representing general form telemetry.
+* **Double-Column Grid:** Re-rendered standard input lists inside a responsive `grid-cols-2` layout, decreasing scrolling height inside forms tree by **over 50%**.
+* **High-Visibility Alerts:** Added an alert box at the top of forms (`Missing Hidden Inputs`) containing warning pill badges for all required tracking attributes that are not configured in the page DOM structure.
+
+### 2. Interactive Page Routing & Status LEDs (DashboardTab.jsx)
+* **How-to-Fix Bridge:** Added a `setActiveTab` bridge transition button directly beneath the form missing penalty log on the dashboard. Users can click `👉 View details in Forms Tree` to instantly jump to the structure tree where the form layout is detailed.
+* **Flashing Status LEDs:** Upgraded the trackers audit grid. Present/initialized pixels now show a vibrant flashing green LED light, script errors display a pulsing orange warning light, and missing systems present a static muted slate point.
+
+### 3. Dynamic Height & Auto Page Break PDF Engine (PdfReport.jsx)
+* **Fluid Layout Heights:** Removed the strict `height: '1122px'` limit from the Technical Breakdown and Developer Patch pages. The templates now use `min-h-[1122px]` to dynamically stretch vertically based on forms and fields count.
+* **Layout Truncation Fix:** Removed the `max-h-[480px] overflow-y-auto` style from the PDF document markup. The printable table now expands naturally to include all fields without cropping content.
+* **Page Break Integrity:** Applied `page-break-inside: avoid` (inline CSS `pageBreakInside`) to table rows (`<tr>`) and error violation cards, ensuring table entries and descriptions wrap cleanly onto subsequent pages without clipping.
+* **Dynamic Table Sections:** Segmented the PDF structure table to mirror the grouped UI layout, dividing form outputs into Attribution and Standard tables, and adding a warning alert header for missing input fields.
+* **Colophon Upgrades:** Replaced rigid footer page indicators (e.g. `Page 2 of 3`) with general page colophons (`Technical Analysis`, `Developer Action Spec`) to support clean layout flow across variable page counts.
+
+---
+
+## 🛠️ Update v3.3: B2B Tracking and Account-Based Marketing Support
+
+To address the specific requirements of the B2B segment and Account-Based Marketing (ABM), support for Marketo (Adobe) and Salesforce Pardot tracking has been integrated alongside Google, Yandex, Facebook, TikTok, and HubSpot:
+
+### 1. B2B Analytics Interception & State Updates
+* Added support for **Marketo (Adobe)**:
+  - Intercepts Cookie `_mkto_trk`
+  - Validates global main world object `window.Munchkin`
+  - Detects DOM scripts with paths containing `munchkin.js`
+  - Intercepts outgoing requests to `marketo.net` and `mktorespond.com`
+* Added support for **Salesforce Pardot**:
+  - Intercepts Cookie `pi_opt_in` (Salesforce compliance cookie)
+  - Validates global main world objects `window.piAId` and `window.piCId`
+  - Detects DOM scripts with paths containing `pardot.com/pd.js` or `pardot.js`
+  - Intercepts outgoing requests to `pardot.com`
+
+### 2. Attribution Penalty Bypass for Enterprise B2B
+* B2B marketing channels frequently rely on CRM platform tags (HubSpot, Marketo) instead of traditional consumer analytics like Google Analytics or Yandex Metrica.
+* Updated `calculateHealthScore()` in `store.js` to bypass missing GA (`_ga`) and Yandex Metrica (`_ym_uid`) cookie warnings when HubSpot (`hubspotutk`) or Marketo (`_mkto_trk`) cookies are successfully detected on the target website.
+
+### 3. Integrated UI Matrix & PDF Reports
+* Expanded the **Analytics Systems Audit** grid in `DashboardTab.jsx` from 6 to 8 platforms, displaying GTM, GA4, Yandex, Facebook, TikTok, HubSpot, Marketo, and Salesforce Pardot with responsive green/orange LED indicators.
+* Re-styled the trackers grid layout to `grid-cols-4` (symmetric 4x2 layout) for perfect alignment.
+* Expanded the **Advertising Trackers & Pixels Status** checklist matrix on Page 1 of `PdfReport.jsx` to list all 8 systems in a symmetric 4x2 visual grid (`grid-cols-4`).
+* Updated default tracking parameter templates in `useScanData.js`, `Popup.jsx`, `DashboardTab.jsx`, `DataTreeTab.jsx`, and `PdfReport.jsx` to include `_mkto_trk` and `pi_opt_in`.
+* Enhanced the **UTM autofill generator** helper to append `_mkto_trk=test_marketo_555` and `pi_opt_in=true` mocks to the active tab URL.
+
+---
+
+## 🛡️ Update v3.4: GDPR/CCPA Cookie Consent Compliance Audit
+
+To safeguard Enterprise marketing setups from compliance penalties and legal violations, automated Cookie Consent Auditing has been fully integrated:
+
+### 1. Prior Consent Validation Logic (`store.js`)
+* Implemented double-vector check evaluating active trackers against Consent Management Platform (CMP) cookie states:
+  * **Marketing Target Cookies:** `_ga`, `_gid`, `_gat`, `_gcl_au`, `_ym_uid`, `_ym_d`, `_ym_isad`, `_fbp`, `_fbc`, `_ttp`, `hubspotutk`, `_mkto_trk`, `pi_opt_in`.
+  * **Consent CMP Cookies:** `OptanonConsent`, `OptanonAlertBoxClosed`, `CookieConsent`, `cookieyes-consent`, `cookieconsent_status`, `euconsent-v2`, `gdpr_consent`, `ccpa-consent`.
+* If tracking/analytics cookies are stored before a valid consent cookie is set, the extension flags a **GDPR/CCPA Prior Consent Violation**, deducting **15 points** from the Health Score.
+
+### 2. High-Fidelity Dashboard Card Panel (`DashboardTab.jsx`)
+* Added a visual **GDPR & Cookie Compliance** panel on the main dashboard tab:
+  * **Compliant State (Green):** Rendered with deep glowing green borders, stating the detected Consent Manager platform (e.g. OneTrust, Cookiebot, CookieYes) and verifying that analytics initialized legally.
+  * **Non-Compliant State (Red):** Displayed with flashing warning icons and alert badges, listing all unauthorized tracking cookies loaded before consent.
+
+### 3. Integrated PDF Reporting & Unit Tests
+* Appended the GDPR/CCPA Cookie Audit Status card onto **Page 1 (Cover Page)** of the executive PDF print layout, reflecting compliance status.
+* Embedded support for Prior Consent violation penalties inside technical logs printouts.
+* Created unit tests inside `test_health_score.js` (Test 11, 12, 13) to verify penalty scoring under different CMP states. All unit tests pass successfully.
