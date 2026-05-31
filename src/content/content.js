@@ -45,23 +45,23 @@ function safeSendMessage(message, callback) {
   }
 }
 
-// Utility to search for forms recursively in Shadow DOM
+// Utility to search for forms recursively in Shadow DOM — O(n) single pass
 function scanShadowDOM(root, formsList = []) {
   if (!root) return formsList;
 
-  // Find all forms in the current root
-  const forms = root.querySelectorAll('form');
-  forms.forEach(form => {
+  // Collect all forms at this level
+  root.querySelectorAll('form').forEach(form => {
     formsList.push(parseForm(form, root !== document));
   });
 
-  // Recurse into all elements that have a shadowRoot
-  const allElements = root.querySelectorAll('*');
-  allElements.forEach(el => {
-    if (el.shadowRoot) {
-      scanShadowDOM(el.shadowRoot, formsList);
+  // Single-pass TreeWalker — faster than querySelectorAll('*') at every level
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+  let node;
+  while ((node = walker.nextNode())) {
+    if (node.shadowRoot) {
+      scanShadowDOM(node.shadowRoot, formsList);
     }
-  });
+  }
 
   return formsList;
 }
@@ -82,12 +82,21 @@ function parseForm(form, isShadow = false) {
   const formElements = form.querySelectorAll('input, select, textarea');
   
   formElements.forEach(el => {
-    const style = window.getComputedStyle(el);
-    const isHidden = el.type === 'hidden' || 
-                     style.display === 'none' || 
-                     style.visibility === 'hidden' ||
-                     el.getAttribute('hidden') !== null;
-                     
+    // ── Cheap attribute-first checks (zero reflow cost) ──────────────────────
+    const isHiddenCheap =
+      el.type === 'hidden' ||
+      el.hasAttribute('hidden') ||
+      el.getAttribute('aria-hidden') === 'true';
+
+    // ── Expensive computed style — only when cheap check passes ───────────────
+    const isHidden = isHiddenCheap || (() => {
+      const s = window.getComputedStyle(el);
+      return s.display === 'none' || s.visibility === 'hidden';
+    })();
+
+    const style = isHidden ? { display: 'none', visibility: 'hidden' }
+      : { display: 'block', visibility: 'visible' };
+
     inputs.push({
       id: typeof el.id === 'string' ? el.id : (el.getAttribute && el.getAttribute('id')) || '',
       name: typeof el.name === 'string' ? el.name : (el.getAttribute && el.getAttribute('name')) || '',
@@ -95,12 +104,10 @@ function parseForm(form, isShadow = false) {
       value: typeof el.value === 'string' ? el.value : '',
       placeholder: typeof el.placeholder === 'string' ? el.placeholder : (el.getAttribute && el.getAttribute('placeholder')) || '',
       isHidden: isHidden,
-      style: {
-        display: style.display,
-        visibility: style.visibility
-      }
+      style,
     });
   });
+
 
   return {
     id: getFormAttributeSafe(form, 'id'),
@@ -112,29 +119,45 @@ function parseForm(form, isShadow = false) {
   };
 }
 
+// Only capture storage keys relevant to UTM / analytics attribution
+const UTM_STORAGE_PREFIXES = [
+  'utm_', 'sf_utm_', '_ga', '_ym', 'gclid', 'li_fat', 'hubspot',
+  'wbraid', 'gbraid', 'yclid', 'mkto', '_fbp', '_fbc', 'ttclid', 'pi_opt'
+];
+
+function isRelevantStorageKey(key) {
+  if (!key) return false;
+  const lower = key.toLowerCase();
+  return UTM_STORAGE_PREFIXES.some(prefix => lower.includes(prefix));
+}
+
 // Scan the page storage and cookies
 function scanStorageAndCookies() {
   const local = {};
   const session = {};
   const cookies = [];
 
-  // Read localStorage (safe wrapper in case of security exceptions)
+  // Read localStorage — only keys matching UTM/analytics patterns
   try {
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      local[key] = localStorage.getItem(key);
+      if (isRelevantStorageKey(key)) {
+        local[key] = localStorage.getItem(key);
+      }
     }
   } catch (e) {}
 
-  // Read sessionStorage
+  // Read sessionStorage — same allowlist filter
   try {
     for (let i = 0; i < sessionStorage.length; i++) {
       const key = sessionStorage.key(i);
-      session[key] = sessionStorage.getItem(key);
+      if (isRelevantStorageKey(key)) {
+        session[key] = sessionStorage.getItem(key);
+      }
     }
   } catch (e) {}
 
-  // Read cookies
+  // Read cookies (all — they are small and already key=value pairs)
   try {
     const rawCookies = document.cookie.split(';');
     rawCookies.forEach(cookie => {
@@ -150,6 +173,7 @@ function scanStorageAndCookies() {
 
   return { local, session, cookies };
 }
+
 
 // Scan DOM for marketing scripts
 function scanDetectedScripts() {

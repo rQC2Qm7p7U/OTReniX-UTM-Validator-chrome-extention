@@ -98,17 +98,20 @@
 
   // Trigger checks on user interaction events (since optimization plugins like WP Rocket delay scripts until interaction)
   const interactionEvents = ['scroll', 'mousemove', 'keydown', 'click', 'touchstart'];
+  
+  const triggerInteractionCheck = () => {
+    // Delay-check to catch dynamically loading scripts post-interaction
+    setTimeout(checkAnalytics, 500);
+    setTimeout(checkAnalytics, 3000);
+    
+    // Remove listeners from all interaction events immediately
+    interactionEvents.forEach(eventName => {
+      window.removeEventListener(eventName, triggerInteractionCheck);
+    });
+  };
+
   interactionEvents.forEach(eventName => {
-    window.addEventListener(eventName, function handler() {
-      checkAnalytics();
-      
-      // Delay-check to catch dynamically loading scripts post-interaction
-      setTimeout(checkAnalytics, 500);
-      setTimeout(checkAnalytics, 1500);
-      setTimeout(checkAnalytics, 3000);
-      
-      window.removeEventListener(eventName, handler);
-    }, { passive: true });
+    window.addEventListener(eventName, triggerInteractionCheck, { passive: true });
   });
 
   // Listen for manually triggered scan requests from the content script

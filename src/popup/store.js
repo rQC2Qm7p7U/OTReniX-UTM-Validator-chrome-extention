@@ -328,15 +328,17 @@ export const useStore = create((set, get) => ({
   toggleSandboxMode: (enabled) => {
     set({ sandboxMode: enabled });
     chrome.storage.local.set({ sandboxMode: enabled });
-    
-    chrome.tabs.query({}, (tabs) => {
-      tabs.forEach(tab => {
+
+    // Notify only the currently active tab — no need to broadcast to all N tabs
+    chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+      if (tab?.id) {
         chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_SANDBOX', enabled }, () => {
-          const err = chrome.runtime.lastError;
+          void chrome.runtime.lastError; // suppress expected error if content script not loaded
         });
-      });
+      }
     });
   },
+
 
   addWebhookLog: (log) => {
     const newLog = {
@@ -388,8 +390,10 @@ export const useStore = create((set, get) => ({
   }
 }));
 
+let isStorageListenerRegistered = false;
+
 // Real-time synchronization of Chrome storage updates (sync and local) into Zustand store
-if (typeof chrome !== 'undefined' && chrome.storage) {
+if (typeof chrome !== 'undefined' && chrome.storage && !isStorageListenerRegistered) {
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === 'sync') {
       const stateUpdate = {};
@@ -423,4 +427,5 @@ if (typeof chrome !== 'undefined' && chrome.storage) {
       useStore.setState(stateUpdate);
     }
   });
+  isStorageListenerRegistered = true;
 }
