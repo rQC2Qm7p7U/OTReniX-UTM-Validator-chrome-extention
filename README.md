@@ -105,6 +105,13 @@ Customize every PDF with your agency name, logo, email, phone, and website for s
 ### 🛡️ GDPR/CCPA Cookie Consent Audit
 Detects if marketing and tracking cookies (e.g. Google Analytics, Facebook Pixel, Marketo, HubSpot) are loaded *prior* to user consent. Checks for the presence of leading Consent Management Platform (CMP) cookies (like OneTrust, Cookiebot, CookieYes) and alerts if tracking triggers prematurely.
 
+### 🤖 AI Patch Assistant
+Generate precise, custom JavaScript drop-in fixes tailored specifically to your landing page form structures:
+- **Chrome window.ai Support:** Leverages local on-device Gemini Nano models to write JS patches locally in your browser, without third-party requests.
+- **Gemini API Integrations:** Connects directly to Google's official Gemini API (`gemini-2.5-flash`) via an API Key securely configured on the options settings page.
+- **Dynamic Context Prompt:** Copies a dynamically optimized prompt detailing form structures and missing keys for manual LLM audits.
+- **One-Click Copying:** Copy prompt or generated patches with interactive visual checkmark cues.
+
 ---
 
 ## 🚀 Installation (Developer Mode)

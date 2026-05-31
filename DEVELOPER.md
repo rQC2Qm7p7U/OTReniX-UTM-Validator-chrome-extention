@@ -174,6 +174,19 @@ To protect client domains from high regulatory fines under GDPR and CCPA, the ex
 
 ---
 
+### 7. AI Patch Assistant Engine
+To assist developers in addressing missing attribution inputs, the extension integrates an AI generation workspace inside `DataTreeTab.jsx`:
+* **Prompt Assembly:** The system extracts the parsed form properties (`id`, `className`, `action`, `isShadow`) and inputs structure. It calculates only the missing keys specifically for this form to keep the context minimal, and builds a comprehensive instruction prompt.
+* **Execution Paths:**
+  1. **Google Gemini API:** If `geminiApiKey` is saved in options, the extension fires an HTTP POST request to Google's official endpoints using the `gemini-2.5-flash` model.
+  2. **Chrome built-in window.ai:** Fallback checking for local browser model APIs (`window.ai.languageModel` or `window.ai.assistant`).
+  3. **Manual Export:** A Copy button copies the generated prompt directly for pasting into web LLM interfaces.
+* **Payload Integrity & UI Transitions:**
+  - Code outputs are parsed from markdown and extracted from code blocks (\````javascript ... ````) automatically.
+  - Interactive loader animations (Skeleton elements) and visual confirmation states guide the user.
+
+---
+
 ## 🛠 Compilation and Debugging
 
 1. Install dependencies:

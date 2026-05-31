@@ -16,6 +16,7 @@ Dynamic UTM & Lead Source Validator is the ultimate tool for B2B marketers, agen
 Key Features:
 - Multi-Platform Pixel Detection: Instantly audit GTM, GA4, Yandex.Metrica, Facebook, TikTok, HubSpot, Marketo, and Salesforce Pardot setup with interactive LEDs.
 - GDPR & Cookie Compliance: Audit prior consent compliance and flag tracking scripts loaded before user consent.
+- AI-Powered Patch Assistant: Generate precise JavaScript drop-in fixes tailored specifically to your form structures using Chrome's local window.ai (Gemini Nano) or a custom Gemini API key. Alternatively, copy a dynamically optimized prompt for manual LLM audits.
 - Form Telemetry Scanning: Crawl nested Shadow DOMs and iframes to map hidden UTM inputs and tracking parameters.
 - Redirect Chains Telemetry: Detect redirect hops that strip critical parameters like gclid, li_fat_id, or utm_source.
 - Sandbox 2.0 Integration: Intercept form submissions locally, simulate data transmissions, and check API webhook payloads to n8n, Zapier, or Google Apps Script.
