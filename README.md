@@ -105,18 +105,18 @@ Customize every PDF with your agency name, logo, email, phone, and website for s
 
 ## 🚀 Installation (Developer Mode)
 
-1. Clone the repository
+**1. Clone the repository**
 ```bash
 git clone https://github.com/rQC2Qm7p7U/OTReniX-UTM-Validator-chrome-extention.git
 ```
 ```bash
 cd OTReniX-UTM-Validator-chrome-extention
 ```
-2. Install dependencies
+**2. Install dependencies**
 ```bash
 npm install
 ```
-3. Build the extension
+**3. Build the extension**
 ```bash
 npm run build
 ```
