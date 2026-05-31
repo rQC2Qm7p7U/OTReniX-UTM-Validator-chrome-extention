@@ -27,15 +27,15 @@ const generatePromptText = (form, fIdx, allKeys) => {
     });
   });
 
-  return `You are a B2B marketing analytics developer. Write a precise, self-invoking plain JavaScript snippet to capture UTMs and populate them into the HTML form described below.
+  return `You are a Staff B2B Marketing Attribution Engineer. Your task is to write a highly professional, enterprise-ready, defensive JavaScript patch to capture UTM campaign parameters and populate them into the target form specified below.
 
 Form Details:
 - Form Index: ${fIdx + 1}
 - DOM ID: ${form.id || 'none'}
 - DOM Class: ${form.className || 'none'}
-- Form Action: ${form.action || 'none'}
+- Action: ${form.action || 'none'}
 - Inside Shadow DOM: ${form.isShadow ? 'Yes' : 'No'}
-- Inputs Detected:
+- Inputs:
 ${form.inputs.map(inp => `  * name="${inp.name || ''}", id="${inp.id || ''}", type="${inp.type || ''}", hidden=${inp.isHidden ? 'Yes' : 'No'}`).join('\n')}
 
 Required Attributions to capture:
@@ -44,14 +44,20 @@ ${allKeys.join(', ')}
 Missing Parameters specifically for this form (you MUST write logic to inject these):
 ${missingSlots.join(', ')}
 
-Requirements for the JS code:
-1. Parse tracking parameters from the URL (window.location.search) and back them up in sessionStorage (using keys like 'otrenix_attr_' + key) to persist them across redirects and subpages.
-2. Retrieve from sessionStorage if URL lacks parameters.
-3. Automatically populate the values into form inputs (selecting by name, id, or selector matching 'input[name="' + key + '"], #' + key).
-4. If a matching input field for a missing tracking parameter does not exist in the form, your script MUST programmatically create a new hidden input (<input type="hidden" name="[key]" value="[val]" />) and append it inside the form.
-5. If the form is inside a Shadow DOM, your script must traverse the shadow root (element.shadowRoot) to find/create the inputs.
-6. Target ONLY this specific form using its unique identifier (${form.id ? `#${form.id}` : `form index ${fIdx} on the page`}).
-7. Output format: Return ONLY the self-invoking JavaScript code block wrapped in \`\`\`javascript ... \`\`\` and a brief 2-sentence explanation of where to paste this code (e.g. before the closing </body> tag). Do not include any other conversational filler text.`;
+Your JavaScript code must adhere to these strict enterprise rules:
+1. **Namespace & Scope Isolation**: Wrap the entire implementation inside an Immediately Invoked Function Expression (IIFE) with 'use strict'; to ensure zero pollution of the host window's global scope.
+2. **Defensive Error Isolation**: Wrap all operations (URL parsing, sessionStorage/cookie reads, DOM queries, and input insertions) in try-catch blocks. Under no circumstances must a failure in this script trigger an unhandled exception that disrupts the host page's core features (e.g. payment buttons, scrolling, or page loading).
+3. **Idempotence & Duplicate Prevention**: The script must be idempotent. If executed multiple times, it must not append duplicate hidden fields or bind duplicate listeners. Use a sentinel flag on the form object (e.g. form.__otrenix_init = true) to prevent duplicate runs.
+4. **SPA State Synchronization (React/Vue/HubSpot)**: Setting input values must trigger React, Vue, Angular, and HubSpot state listeners. Explicitly dispatch 'input' and 'change' events:
+   const ev = new Event('input', { bubbles: true });
+   input.dispatchEvent(ev);
+   const cev = new Event('change', { bubbles: true });
+   input.dispatchEvent(cev);
+5. **Dynamic DOM Resolution (Dynamic Forms)**: B2B forms are often loaded dynamically or rendered lazily. Use a polling function (retrying up to 5 times at 500ms intervals) or a MutationObserver to locate the form and inputs if they aren't immediately present.
+6. **No Cumulative Layout Shift (CLS)**: Appended hidden inputs must have zero impact on the visual page structure. Ensure they use type="hidden", or are hidden with inline CSS (display: none !important) and appended cleanly to the bottom of the form.
+7. **JSDoc and Style Guidelines**: Write clean, modern, well-commented ES6+ code. Use JSDoc comments to document key utility functions.
+
+Format: Return ONLY the JavaScript code block wrapped in \`\`\`javascript ... \`\`\` and a brief 2-sentence explanation of where to paste it. Do not include any other conversational text.`;
 };
 
 export default function DataTreeTab({
