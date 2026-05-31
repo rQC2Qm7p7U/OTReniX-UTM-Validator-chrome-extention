@@ -350,6 +350,7 @@ export default function Popup() {
           <DashboardTab
             healthScore={healthScore}
             forms={forms}
+            cookies={cookies}
             redirects={redirects}
             url={url}
             detectedScripts={detectedScripts}

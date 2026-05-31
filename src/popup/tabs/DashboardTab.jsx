@@ -6,12 +6,15 @@ import {
   AlertTriangle, 
   Check, 
   Copy, 
-  Download 
+  Download,
+  ShieldCheck,
+  ShieldAlert
 } from 'lucide-react';
 
 export default function DashboardTab({
   healthScore,
   forms,
+  cookies = [],
   redirects,
   url,
   detectedScripts,
@@ -29,6 +32,42 @@ export default function DashboardTab({
     if (healthScore >= 60) return { stroke: '#f97316', text: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20' };
     return { stroke: '#ef4444', text: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20' };
   }, [healthScore]);
+
+  const consentCompliance = useMemo(() => {
+    const list = cookies || [];
+    const MARKETING_COOKIE_PATTERNS = ['_ga', '_gid', '_gat', '_gcl_au', '_ym_uid', '_ym_d', '_ym_isad', '_fbp', '_fbc', '_ttp', 'hubspotutk', '_mkto_trk', 'pi_opt_in'];
+    const CONSENT_COOKIE_PATTERNS = ['optanonconsent', 'optanonalertboxclosed', 'cookieconsent', 'cookieyes-consent', 'cookieconsent_status', 'euconsent-v2', 'gdpr_consent', 'ccpa-consent'];
+
+    const foundMarketing = list
+      .filter(c => MARKETING_COOKIE_PATTERNS.some(pat => c.name.toLowerCase().includes(pat)))
+      .map(c => c.name);
+    const foundConsent = list
+      .filter(c => CONSENT_COOKIE_PATTERNS.some(pat => c.name.toLowerCase().includes(pat)))
+      .map(c => c.name);
+
+    const hasMarketing = foundMarketing.length > 0;
+    const hasConsent = foundConsent.length > 0;
+
+    let cmpName = null;
+    if (hasConsent) {
+      const consentLower = foundConsent[0].toLowerCase();
+      if (consentLower.includes('optanon')) cmpName = 'OneTrust';
+      else if (consentLower.includes('cookiebot') || consentLower === 'cookieconsent') cmpName = 'Cookiebot';
+      else if (consentLower.includes('cookieyes')) cmpName = 'CookieYes';
+      else cmpName = 'Generic CMP';
+    }
+
+    const isViolating = hasMarketing && !hasConsent;
+
+    return {
+      hasMarketing,
+      hasConsent,
+      foundMarketing,
+      foundConsent,
+      cmpName,
+      isViolating
+    };
+  }, [cookies]);
 
   const radius = 40;
   const strokeWidth = 8;
@@ -149,6 +188,60 @@ export default function DashboardTab({
             );
           })}
         </div>
+      </div>
+
+      {/* GDPR/CCPA Consent Audit */}
+      <div className="flex flex-col gap-2">
+        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide px-1">GDPR & Cookie Compliance</span>
+        {consentCompliance.isViolating ? (
+          <div className="glass-panel border-red-500/25 rounded-xl p-3 flex gap-3 items-start bg-red-950/5 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/5 rounded-full blur-xl pointer-events-none" />
+            <div className="mt-0.5 shrink-0">
+              <ShieldAlert className="w-5 h-5 text-red-500 animate-pulse-neon" />
+            </div>
+            <div className="flex-1 flex flex-col gap-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-red-400">Non-Compliant</span>
+                <span className="text-[9px] font-semibold bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded-full uppercase tracking-wider">Violation</span>
+              </div>
+              <p className="text-[10px] text-slate-400 leading-normal">
+                Tracking cookies were stored prior to user consent. To be compliant under GDPR/CCPA, these cookies must only load after approval.
+              </p>
+              <div className="flex flex-col gap-1 mt-1">
+                <span className="text-[8px] uppercase tracking-wider text-slate-500 font-bold">Unauthorized Cookies ({consentCompliance.foundMarketing.length}):</span>
+                <div className="flex flex-wrap gap-1">
+                  {consentCompliance.foundMarketing.map(name => (
+                    <span key={name} className="text-[7.5px] font-mono font-bold bg-red-950/20 text-red-300 border border-red-500/10 rounded px-1.5 py-0.5">
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="glass-panel border-emerald-500/20 rounded-xl p-3 flex gap-3 items-start bg-emerald-950/5 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-xl pointer-events-none" />
+            <div className="mt-0.5 shrink-0">
+              <ShieldCheck className="w-5 h-5 text-emerald-500" />
+            </div>
+            <div className="flex-1 flex flex-col gap-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-emerald-400">Compliant</span>
+                {consentCompliance.cmpName && (
+                  <span className="text-[9px] font-bold text-cyan-400 font-mono">
+                    CMP: {consentCompliance.cmpName}
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-400 leading-normal">
+                {!consentCompliance.hasMarketing 
+                  ? 'No tracking cookies stored yet. Page respects prior consent regulations.'
+                  : `Consent cookie detected (${consentCompliance.foundConsent[0]}). Analytics cookies initialized legally.`}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Audit Log / Penalties */}

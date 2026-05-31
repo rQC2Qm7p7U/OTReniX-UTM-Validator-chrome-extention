@@ -205,6 +205,32 @@ export const calculateHealthScore = (forms, redirects, storages, cookies, urlStr
     });
   }
 
+  // 5b. GDPR/CCPA Prior Consent Compliance check
+  const MARKETING_COOKIE_PATTERNS = ['_ga', '_gid', '_gat', '_gcl_au', '_ym_uid', '_ym_d', '_ym_isad', '_fbp', '_fbc', '_ttp', 'hubspotutk', '_mkto_trk', 'pi_opt_in'];
+  const CONSENT_COOKIE_PATTERNS = ['optanonconsent', 'optanonalertboxclosed', 'cookieconsent', 'cookieyes-consent', 'cookieconsent_status', 'euconsent-v2', 'gdpr_consent', 'ccpa-consent'];
+
+  const foundMarketingCookies = cookies
+    .filter(c => MARKETING_COOKIE_PATTERNS.some(pat => c.name.toLowerCase().includes(pat)))
+    .map(c => c.name);
+  const foundConsentCookies = cookies
+    .filter(c => CONSENT_COOKIE_PATTERNS.some(pat => c.name.toLowerCase().includes(pat)))
+    .map(c => c.name);
+
+  const hasMarketing = foundMarketingCookies.length > 0;
+  const hasConsent = foundConsentCookies.length > 0;
+
+  if (hasMarketing && !hasConsent) {
+    const penaltyVal = 15;
+    score -= penaltyVal;
+    penalties.push({
+      type: 'high',
+      label: 'GDPR/CCPA Prior Consent Violation',
+      desc: `Marketing/tracking cookies were stored before consent was obtained: ${foundMarketingCookies.join(', ')}. No consent platform (CMP) cookie found.`,
+      penalty: penaltyVal,
+      status: '🔴 Red'
+    });
+  }
+
   // 6. Diagnostics: Script detected but not initialized (e.g. AdBlock, CSP error, or load failure)
   if (detectedScripts && analyticsStatus) {
     const checkSystems = [

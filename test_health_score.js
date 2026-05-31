@@ -35,7 +35,8 @@ try {
     ],
     cookies: [
       { name: '_ga', value: 'GA1.2.123' },
-      { name: '_ym_uid', value: 'YM123' }
+      { name: '_ym_uid', value: 'YM123' },
+      { name: 'CookieConsent', value: 'true' }
     ]
   });
 
@@ -61,7 +62,8 @@ try {
     ],
     cookies: [
       { name: '_ga', value: 'GA1.2.123' },
-      { name: '_ym_uid', value: 'YM123' }
+      { name: '_ym_uid', value: 'YM123' },
+      { name: 'CookieConsent', value: 'true' }
     ]
   });
 
@@ -94,7 +96,8 @@ try {
     ],
     cookies: [
       { name: '_ga', value: 'GA1.2.123' },
-      { name: '_ym_uid', value: 'YM123' }
+      { name: '_ym_uid', value: 'YM123' },
+      { name: 'CookieConsent', value: 'true' }
     ]
   });
 
@@ -124,7 +127,8 @@ try {
     ],
     cookies: [
       { name: '_ga', value: 'GA1.2.123' },
-      { name: '_ym_uid', value: 'YM123' }
+      { name: '_ym_uid', value: 'YM123' },
+      { name: 'CookieConsent', value: 'true' }
     ]
   });
 
@@ -176,7 +180,8 @@ try {
     ],
     cookies: [
       { name: '_ga', value: 'GA1.2.123' },
-      { name: '_ym_uid', value: 'YM123' }
+      { name: '_ym_uid', value: 'YM123' },
+      { name: 'CookieConsent', value: 'true' }
     ] // Cookies are present (no cookie penalty)
   });
 
@@ -217,7 +222,8 @@ try {
     ],
     cookies: [
       { name: '_ga', value: 'GA1.2.123' },
-      { name: '_ym_uid', value: 'YM123' }
+      { name: '_ym_uid', value: 'YM123' },
+      { name: 'CookieConsent', value: 'true' }
     ]
   });
 
@@ -255,7 +261,8 @@ try {
       }
     ],
     cookies: [
-      { name: '_mkto_trk', value: 'id:123' }
+      { name: '_mkto_trk', value: 'id:123' },
+      { name: 'CookieConsent', value: 'true' }
     ]
   });
 
@@ -280,7 +287,8 @@ try {
       }
     ],
     cookies: [
-      { name: 'hubspotutk', value: 'hubspot123' }
+      { name: 'hubspotutk', value: 'hubspot123' },
+      { name: 'CookieConsent', value: 'true' }
     ]
   });
 
@@ -290,6 +298,82 @@ try {
   console.log('✅ Test 10: B2B HubSpot cookies bypass standard GA/YM missing cookie penalties.');
 } catch (e) {
   console.error('❌ Test 10 failed:', e.message);
+}
+
+// Test Case 11: GA cookie present with no consent cookie triggers penalty (-15)
+try {
+  const data = createMockData({
+    url: 'https://example.com?utm_source=google',
+    forms: [
+      {
+        id: 'lead-form',
+        inputs: [
+          { name: 'utm_source', type: 'hidden', value: 'google' }
+        ]
+      }
+    ],
+    cookies: [
+      { name: '_ga', value: 'GA1.2.3' },
+      { name: '_ym_uid', value: 'YM123' }
+    ]
+  });
+
+  const result = calculateHealthScore(data.forms, data.redirects, data.storages, data.cookies, data.url);
+  assert.strictEqual(result.score, 85);
+  assert.ok(result.penalties.some(p => p.label.includes('GDPR/CCPA Prior Consent')));
+  console.log('✅ Test 11: GA cookie present with no consent cookie triggers penalty (-15).');
+} catch (e) {
+  console.error('❌ Test 11 failed:', e.message);
+}
+
+// Test Case 12: GA cookie present alongside CookieConsent is compliant (no penalty)
+try {
+  const data = createMockData({
+    url: 'https://example.com?utm_source=google',
+    forms: [
+      {
+        id: 'lead-form',
+        inputs: [
+          { name: 'utm_source', type: 'hidden', value: 'google' }
+        ]
+      }
+    ],
+    cookies: [
+      { name: '_ga', value: 'GA1.2.3' },
+      { name: '_ym_uid', value: 'YM123' },
+      { name: 'CookieConsent', value: 'true' }
+    ]
+  });
+
+  const result = calculateHealthScore(data.forms, data.redirects, data.storages, data.cookies, data.url);
+  assert.strictEqual(result.score, 100);
+  assert.strictEqual(result.penalties.length, 0);
+  console.log('✅ Test 12: GA cookie present alongside CookieConsent is compliant (no penalty).');
+} catch (e) {
+  console.error('❌ Test 12 failed:', e.message);
+}
+
+// Test Case 13: No cookies present returns compliant status (no penalty)
+try {
+  const data = createMockData({
+    url: 'https://example.com?utm_source=google',
+    forms: [
+      {
+        id: 'lead-form',
+        inputs: [
+          { name: 'utm_source', type: 'hidden', value: 'google' }
+        ]
+      }
+    ],
+    cookies: []
+  });
+
+  const result = calculateHealthScore(data.forms, data.redirects, data.storages, data.cookies, data.url);
+  assert.strictEqual(result.score, 90);
+  assert.ok(!result.penalties.some(p => p.label.includes('GDPR/CCPA Prior Consent')));
+  console.log('✅ Test 13: No cookies present returns compliant consent status (no prior consent penalty).');
+} catch (e) {
+  console.error('❌ Test 13 failed:', e.message);
 }
 
 console.log('\n=== Testing Complete! ===');

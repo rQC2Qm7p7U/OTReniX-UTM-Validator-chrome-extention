@@ -21,6 +21,42 @@ const PdfReport = forwardRef(({
     text: healthScore >= 80 ? 'text-emerald-400' : healthScore >= 60 ? 'text-orange-400' : 'text-red-400'
   };
 
+  const consentCompliance = React.useMemo(() => {
+    const list = cookies || [];
+    const MARKETING_COOKIE_PATTERNS = ['_ga', '_gid', '_gat', '_gcl_au', '_ym_uid', '_ym_d', '_ym_isad', '_fbp', '_fbc', '_ttp', 'hubspotutk', '_mkto_trk', 'pi_opt_in'];
+    const CONSENT_COOKIE_PATTERNS = ['optanonconsent', 'optanonalertboxclosed', 'cookieconsent', 'cookieyes-consent', 'cookieconsent_status', 'euconsent-v2', 'gdpr_consent', 'ccpa-consent'];
+
+    const foundMarketing = list
+      .filter(c => MARKETING_COOKIE_PATTERNS.some(pat => c.name.toLowerCase().includes(pat)))
+      .map(c => c.name);
+    const foundConsent = list
+      .filter(c => CONSENT_COOKIE_PATTERNS.some(pat => c.name.toLowerCase().includes(pat)))
+      .map(c => c.name);
+
+    const hasMarketing = foundMarketing.length > 0;
+    const hasConsent = foundConsent.length > 0;
+
+    let cmpName = null;
+    if (hasConsent) {
+      const consentLower = foundConsent[0].toLowerCase();
+      if (consentLower.includes('optanon')) cmpName = 'OneTrust';
+      else if (consentLower.includes('cookiebot') || consentLower === 'cookieconsent') cmpName = 'Cookiebot';
+      else if (consentLower.includes('cookieyes')) cmpName = 'CookieYes';
+      else cmpName = 'Generic CMP';
+    }
+
+    const isViolating = hasMarketing && !hasConsent;
+
+    return {
+      hasMarketing,
+      hasConsent,
+      foundMarketing,
+      foundConsent,
+      cmpName,
+      isViolating
+    };
+  }, [cookies]);
+
   const allKeys = [...new Set(['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'li_fat_id', 'hubspotutk', '_mkto_trk', 'pi_opt_in', ...customB2BKeys])];
 
   return (
@@ -102,6 +138,32 @@ const PdfReport = forwardRef(({
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* GDPR/CCPA Compliance Status Banner */}
+          <div className={`mt-2 p-3 rounded-lg border ${
+            consentCompliance.isViolating 
+              ? 'bg-red-950/20 border-red-500/20 text-red-400' 
+              : 'bg-emerald-950/20 border-emerald-500/20 text-emerald-400'
+          }`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'between', fontSize: '10px', pageBreakInside: 'avoid' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <span className="font-bold uppercase tracking-wider text-[8.5px]">GDPR / CCPA Cookie Audit Status</span>
+              <span className="text-[9.5px] text-slate-300">
+                {consentCompliance.isViolating 
+                  ? `Prior consent violation! Marketing cookies (${consentCompliance.foundMarketing.slice(0, 3).join(', ')}) set without consent cookie.`
+                  : consentCompliance.cmpName 
+                    ? `Compliant. Consent manager cookie detected (${consentCompliance.cmpName}).` 
+                    : 'Compliant. No tracking cookies detected without user consent.'
+                }
+              </span>
+            </div>
+            <span className={`text-[8.5px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider border shrink-0 ${
+              consentCompliance.isViolating 
+                ? 'bg-red-500/10 text-red-400 border-red-500/20' 
+                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+            }`} style={{ marginLeft: '10px' }}>
+              {consentCompliance.isViolating ? 'Non-Compliant' : 'Compliant'}
+            </span>
           </div>
 
           {/* Site Screenshot */}

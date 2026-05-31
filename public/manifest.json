@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Dynamic UTM & Lead Source Validator",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "description": "Audit web forms, track redirect chains, and simulate UTM submissions to n8n/Google Apps Script for B2B.",
   "permissions": [
     "tabs",

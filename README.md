@@ -65,6 +65,7 @@ A penalty-based scoring engine rates the page from **0 to 100**:
 | 🔴 **Critical** | Red | UTM in URL but missing in form hidden fields or storage |
 | 🔴 **Critical** | Red | A redirect stripped UTM parameters from the chain |
 | 🟠 **High** | Orange | Hidden fields detected but empty on form submission |
+| 🟠 **High** | Orange | GDPR/CCPA Prior Consent Violation (tracking cookies stored before consent) |
 | 🟡 **Medium** | Yellow | Form has no hidden fields to capture marketing parameters |
 | 🔵 **Warning** | Blue | Core analytics cookies (`_ga`, `_ym_uid`) not found |
 | 🔵 **Warning** | Blue | Analytics script detected in DOM but not initialized (blocked by AdBlock?) |
@@ -100,6 +101,9 @@ Customize every PDF with your agency name, logo, email, phone, and website for s
 
 ### 🛡️ GDPR-Compliant PII Masking
 `password`, `card`, `cvv`, `passport`, `secret` fields are automatically masked (`***`) in webhook payloads. Email and phone fields are partially masked. Custom PII rules are configurable.
+
+### 🛡️ GDPR/CCPA Cookie Consent Audit
+Detects if marketing and tracking cookies (e.g. Google Analytics, Facebook Pixel, Marketo, HubSpot) are loaded *prior* to user consent. Checks for the presence of leading Consent Management Platform (CMP) cookies (like OneTrust, Cookiebot, CookieYes) and alerts if tracking triggers prematurely.
 
 ---
 

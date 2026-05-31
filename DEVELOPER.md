@@ -139,6 +139,7 @@ Penalty weights ($w_i$) are defined in [store.js](src/popup/store.js):
 * **🔴 Critical (-40):** UTMs exist in URL but are missing from DOM forms and storage.
 * **🔴 Critical (-40):** Redirect chain stripped UTM parameters before the page loaded.
 * **🟠 High (-30):** Hidden fields are present, but Sandbox Mode transmits them empty.
+* **🟠 High (-15):** GDPR/CCPA Prior Consent Violation (marketing/tracking cookies set before consent).
 * **🟡 Medium (-15):** No UTMs in URL, and forms lack hidden inputs/slots to capture them.
 * **🔵 Blue (-10):** Core web analytics cookies (`_ga`, `_ym_uid`) are missing, though script blocks exist.
 
