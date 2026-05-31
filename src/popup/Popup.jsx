@@ -272,7 +272,7 @@ export default function Popup() {
 
   if (isLoading) {
     return (
-      <div className="w-[400px] h-[550px] bg-[#050b14] flex flex-col items-center justify-center gap-3">
+      <div className="w-full h-full bg-[#050b14] flex flex-col items-center justify-center gap-3">
         <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin" />
         <span className="text-xs text-slate-400 font-medium">Booting Diagnostics Store...</span>
       </div>
@@ -280,7 +280,7 @@ export default function Popup() {
   }
 
   return (
-    <div className="w-[400px] h-[550px] bg-[#050b14] text-slate-100 flex flex-col overflow-hidden relative font-sans border border-white/5">
+    <div className="w-full h-full bg-[#050b14] text-slate-100 flex flex-col overflow-hidden relative font-sans border border-white/5">
       {/* Dynamic Background Premium Glows */}
       <div className="absolute top-[-100px] left-[-50px] w-[250px] h-[250px] bg-blue-600/10 rounded-full blur-[80px] pointer-events-none" />
       <div className="absolute bottom-[-100px] right-[-50px] w-[250px] h-[250px] bg-cyan-600/10 rounded-full blur-[80px] pointer-events-none" />
