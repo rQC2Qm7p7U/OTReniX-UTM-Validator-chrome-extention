@@ -268,3 +268,21 @@ To safeguard Enterprise marketing setups from compliance penalties and legal vio
 * Appended the GDPR/CCPA Cookie Audit Status card onto **Page 1 (Cover Page)** of the executive PDF print layout, reflecting compliance status.
 * Embedded support for Prior Consent violation penalties inside technical logs printouts.
 * Created unit tests inside `test_health_score.js` (Test 11, 12, 13) to verify penalty scoring under different CMP states. All unit tests pass successfully.
+
+---
+
+## 🤖 Update v3.5: AI Patch Assistant Integration
+To help developers quickly patch landing page forms and ensure correct UTM attribution configuration, the **AI Patch Assistant** has been integrated:
+
+### 1. Multi-Channel AI Engine (`DataTreeTab.jsx`)
+* **Prompt Copying (Manual LLM):** Generates a precise prompt mapping the form's DOM attributes (IDs, classes, action) and listing missing parameters. Users can copy the prompt in one click and paste it into external models (ChatGPT, Claude, Gemini Web).
+* **Local LLM Execution (Chrome window.ai):** Leverages Chrome's on-device Gemini Nano model (`window.ai.languageModel` / `window.ai.assistant`) to write JS patches locally.
+* **Remote Gemini API Key:** Connects to Google's official Gemini API (`gemini-2.5-flash`) via an API Key securely configured on the options settings page.
+
+### 2. Options Settings Panel (`Options.jsx`)
+* Added a new configurations card under Options. Marketers can securely save their Gemini API Key in `chrome.storage.local` (isolated to local device for security, bypassing cloud sync).
+
+### 3. High-Fidelity UI Features
+* Loaded patch requests show an animated **Skeleton Loader** mimicking code block lines.
+* Code blocks output the drop-in plain Javascript patch with one-click copying and transition checkmark animations.
+* Step-by-step Chrome flag activation logs assist users when setting up local built-in AI models.

@@ -29,7 +29,9 @@ export default function Options() {
     whiteLabel,
     customPIIKeys,
     setWhiteLabel,
-    setCustomPIIKeys
+    setCustomPIIKeys,
+    geminiApiKey,
+    setGeminiApiKey
   } = useStore();
 
   const [inputUrl, setInputUrl] = useState('');
@@ -51,6 +53,9 @@ export default function Options() {
   const [newPIIKey, setNewPIIKey] = useState('');
   const [piiList, setPiiList] = useState([]);
 
+  // Gemini state
+  const [inputApiKey, setInputApiKey] = useState('');
+
   useEffect(() => {
     (async () => {
       await loadSettings();
@@ -69,7 +74,8 @@ export default function Options() {
     setLogoBase64(whiteLabel?.logoBase64 || '');
     
     setPiiList(customPIIKeys || []);
-  }, [webhookUrl, customB2BKeys, whiteLabel, customPIIKeys]);
+    setInputApiKey(geminiApiKey || '');
+  }, [webhookUrl, customB2BKeys, whiteLabel, customPIIKeys, geminiApiKey]);
 
   const handleSave = () => {
     // Validate Webhook URL format if provided
@@ -96,6 +102,7 @@ export default function Options() {
       logoBase64
     });
     setCustomPIIKeys(piiList);
+    setGeminiApiKey(inputApiKey.trim());
     setSavedStatus(true);
     setTimeout(() => setSavedStatus(false), 2000);
   };
@@ -234,6 +241,30 @@ export default function Options() {
                 )}
                 <span className="text-[10px] text-slate-500 flex items-center gap-1">
                   <Info className="w-3.5 h-3.5" /> In Sandbox Mode, all form submissions are redirected to this URL via POST.
+                </span>
+              </div>
+            </section>
+
+            {/* AI Patch Assistant Settings */}
+            <section className="glass-panel rounded-xl p-5 flex flex-col gap-4">
+              <div className="flex items-center gap-2 border-b border-white/5 pb-2">
+                <Zap className="w-4 h-4 text-cyan-400 animate-pulse-neon" />
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">AI Patch Assistant (Gemini / Local LLM)</h2>
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-xs text-slate-400">Google Gemini API Key (optional fallback):</label>
+                <input
+                  type="password"
+                  value={inputApiKey}
+                  onChange={(e) => setInputApiKey(e.target.value)}
+                  placeholder="AIzaSy..."
+                  className="bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-slate-300 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                />
+                <span className="text-[10px] text-slate-500 leading-normal flex items-start gap-1">
+                  <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                  <span>
+                    Providing an API Key enables direct on-demand patch generation in the popup. If blank, the extension will attempt to leverage Chrome's local <strong>window.ai</strong> (Gemini Nano). You can also copy the structured prompt to use manually with any external model.
+                  </span>
                 </span>
               </div>
             </section>

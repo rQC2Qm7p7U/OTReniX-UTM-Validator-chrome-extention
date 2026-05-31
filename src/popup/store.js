@@ -279,6 +279,7 @@ export const useStore = create((set, get) => ({
   customB2BKeys: [],
   webhookLogs: [],
   isLoading: false,
+  geminiApiKey: '',
   
   // Custom branding & tracking
   whiteLabel: { agencyName: '', email: '', phone: '', website: '', logoBase64: '' },
@@ -349,6 +350,11 @@ export const useStore = create((set, get) => ({
     chrome.storage.local.set({ whiteLabel: merged });
   },
 
+  setGeminiApiKey: (key) => {
+    set({ geminiApiKey: key });
+    chrome.storage.local.set({ geminiApiKey: key });
+  },
+
   setCustomPIIKeys: (keys) => {
     const cleanKeys = Array.isArray(keys) ? keys : [];
     set({ customPIIKeys: cleanKeys });
@@ -396,7 +402,7 @@ export const useStore = create((set, get) => ({
     });
     
     const localData = await new Promise(resolve => {
-      chrome.storage.local.get(['sandboxMode', 'webhookLogs', 'whiteLabel'], (data) => resolve(data || {}));
+      chrome.storage.local.get(['sandboxMode', 'webhookLogs', 'whiteLabel', 'geminiApiKey'], (data) => resolve(data || {}));
     });
 
     const wl = localData.whiteLabel;
@@ -415,6 +421,7 @@ export const useStore = create((set, get) => ({
       customPIIKeys: Array.isArray(syncData.customPIIKeys) ? syncData.customPIIKeys : [],
       sandboxMode: !!localData.sandboxMode,
       webhookLogs: Array.isArray(localData.webhookLogs) ? localData.webhookLogs : [],
+      geminiApiKey: localData.geminiApiKey || '',
       isLoading: false
     });
   }
@@ -452,6 +459,9 @@ if (typeof chrome !== 'undefined' && chrome.storage && !isStorageListenerRegiste
           website: wl?.website || '',
           logoBase64: wl?.logoBase64 || ''
         };
+      }
+      if (changes.geminiApiKey) {
+        stateUpdate.geminiApiKey = changes.geminiApiKey.newValue || '';
       }
       
       useStore.setState(stateUpdate);

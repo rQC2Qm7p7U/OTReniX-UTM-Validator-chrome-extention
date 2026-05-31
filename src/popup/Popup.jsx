@@ -33,7 +33,8 @@ export default function Popup() {
     clearWebhookLogs,
     whiteLabel,
     detectedScripts,
-    analyticsStatus
+    analyticsStatus,
+    geminiApiKey
   } = useStore();
 
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -371,6 +372,7 @@ export default function Popup() {
             customB2BKeys={customB2BKeys}
             triggerScanAndFetch={triggerScanAndFetch}
             handleHighlightForm={handleHighlightForm}
+            geminiApiKey={geminiApiKey}
           />
         )}
 
