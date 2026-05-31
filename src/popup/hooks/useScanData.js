@@ -20,8 +20,8 @@ export function useScanData() {
         forms: [], 
         cookies: [], 
         storages: { local: {}, session: {} },
-        detectedScripts: { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false },
-        analyticsStatus: { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false }
+        detectedScripts: { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false, mkt: false, prd: false },
+        analyticsStatus: { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false, mkt: false, prd: false }
       };
       const tabRedirects = sessionData[redirectsKey] || [];
 
@@ -75,6 +75,8 @@ export function useScanData() {
       currentUrl.searchParams.set('gclid', 'test_gclid_999');
       currentUrl.searchParams.set('li_fat_id', 'test_linkedin_888');
       currentUrl.searchParams.set('hubspotutk', 'test_hubspot_777');
+      currentUrl.searchParams.set('_mkto_trk', 'test_marketo_555');
+      currentUrl.searchParams.set('pi_opt_in', 'true');
       
       chrome.tabs.update(tab.id, { url: currentUrl.toString() }, () => {
         setTimeout(triggerScanAndFetch, 500);

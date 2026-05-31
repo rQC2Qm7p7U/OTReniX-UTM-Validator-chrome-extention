@@ -13,7 +13,7 @@ export default function DataTreeTab({
   triggerScanAndFetch,
   handleHighlightForm
 }) {
-  const allKeys = [...new Set(['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'li_fat_id', 'hubspotutk', ...customB2BKeys])];
+  const allKeys = [...new Set(['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'li_fat_id', 'hubspotutk', '_mkto_trk', 'pi_opt_in', ...customB2BKeys])];
 
   return (
     <div className="flex flex-col gap-3 animate-fadeIn">

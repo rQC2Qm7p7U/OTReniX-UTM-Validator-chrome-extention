@@ -242,4 +242,54 @@ try {
   console.error('❌ Test 8 failed:', e.message);
 }
 
+// Test Case 9: Missing standard cookies but has Marketo/HubSpot B2B cookies (no penalty)
+try {
+  const data = createMockData({
+    url: 'https://example.com?utm_source=google',
+    forms: [
+      {
+        id: 'lead-form',
+        inputs: [
+          { name: 'utm_source', type: 'hidden', value: 'google' }
+        ]
+      }
+    ],
+    cookies: [
+      { name: '_mkto_trk', value: 'id:123' }
+    ]
+  });
+
+  const result = calculateHealthScore(data.forms, data.redirects, data.storages, data.cookies, data.url);
+  assert.strictEqual(result.score, 100);
+  assert.strictEqual(result.penalties.length, 0);
+  console.log('✅ Test 9: B2B Marketo cookies bypass standard GA/YM missing cookie penalties.');
+} catch (e) {
+  console.error('❌ Test 9 failed:', e.message);
+}
+
+// Test Case 10: Missing standard cookies but has HubSpot B2B cookies (no penalty)
+try {
+  const data = createMockData({
+    url: 'https://example.com?utm_source=google',
+    forms: [
+      {
+        id: 'lead-form',
+        inputs: [
+          { name: 'utm_source', type: 'hidden', value: 'google' }
+        ]
+      }
+    ],
+    cookies: [
+      { name: 'hubspotutk', value: 'hubspot123' }
+    ]
+  });
+
+  const result = calculateHealthScore(data.forms, data.redirects, data.storages, data.cookies, data.url);
+  assert.strictEqual(result.score, 100);
+  assert.strictEqual(result.penalties.length, 0);
+  console.log('✅ Test 10: B2B HubSpot cookies bypass standard GA/YM missing cookie penalties.');
+} catch (e) {
+  console.error('❌ Test 10 failed:', e.message);
+}
+
 console.log('\n=== Testing Complete! ===');

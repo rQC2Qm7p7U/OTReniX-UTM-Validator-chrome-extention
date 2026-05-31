@@ -21,7 +21,7 @@ const PdfReport = forwardRef(({
     text: healthScore >= 80 ? 'text-emerald-400' : healthScore >= 60 ? 'text-orange-400' : 'text-red-400'
   };
 
-  const allKeys = [...new Set(['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'li_fat_id', 'hubspotutk', ...customB2BKeys])];
+  const allKeys = [...new Set(['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'li_fat_id', 'hubspotutk', '_mkto_trk', 'pi_opt_in', ...customB2BKeys])];
 
   return (
     <div style={{ position: 'fixed', left: '-9999px', top: '0px', width: '794px', zIndex: -9999 }}>
@@ -125,14 +125,16 @@ const PdfReport = forwardRef(({
           {/* Analytics Pixels Checklist Matrix */}
           <div className="flex flex-col gap-2 mt-2">
             <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold px-1">Advertising Trackers & Pixels Status</span>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-4 gap-3">
               {Object.entries({
                 'Google Tag Manager': { key: 'gtm', name: 'GTM' },
                 'Google Analytics 4': { key: 'ga4', name: 'GA4' },
                 'Yandex.Metrica': { key: 'ym', name: 'Yandex' },
                 'Facebook Pixel': { key: 'fbq', name: 'FB Pixel' },
                 'TikTok Pixel': { key: 'ttq', name: 'TikTok' },
-                'HubSpot Tracking': { key: 'hsq', name: 'HubSpot' }
+                'HubSpot Tracking': { key: 'hsq', name: 'HubSpot' },
+                'Marketo Tracking': { key: 'mkt', name: 'Marketo' },
+                'Salesforce Pardot': { key: 'prd', name: 'Pardot' }
               }).map(([fullName, details]) => {
                 const isActive = analyticsStatus && analyticsStatus[details.key];
                 const isDetected = (detectedScripts && detectedScripts[details.key]) || isActive;

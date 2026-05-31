@@ -102,14 +102,16 @@ export default function DashboardTab({
       {/* Analytics Scripts Diagnostics */}
       <div className="flex flex-col gap-2">
         <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide px-1">Analytics Systems Audit</span>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-4 gap-2">
           {[
             { name: 'GTM', key: 'gtm' },
             { name: 'GA4', key: 'ga4' },
             { name: 'Yandex', key: 'ym' },
             { name: 'FB Pixel', key: 'fbq' },
             { name: 'TikTok', key: 'ttq' },
-            { name: 'HubSpot', key: 'hsq' }
+            { name: 'HubSpot', key: 'hsq' },
+            { name: 'Marketo', key: 'mkt' },
+            { name: 'Pardot', key: 'prd' }
           ].map(sys => {
             const initialized = analyticsStatus && analyticsStatus[sys.key];
             const detected = (detectedScripts && detectedScripts[sys.key]) || initialized;

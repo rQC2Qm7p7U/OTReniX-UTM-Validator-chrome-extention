@@ -1,7 +1,7 @@
 let isSandboxModeActive = false;
 let observer;
 let scanTimeout;
-let currentAnalyticsStatus = { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false };
+let currentAnalyticsStatus = { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false, mkt: false, prd: false };
 let customPIIKeys = [];
 
 // Helper to check if the extension context is still valid
@@ -183,7 +183,9 @@ function scanDetectedScripts() {
     ym: !!document.querySelector('script[src*="watch.js"], script[src*="tag.js"]'),
     fbq: !!document.querySelector('script[src*="fbevents.js"], script[src*="connect.facebook.net"]'),
     ttq: !!document.querySelector('script[src*="tiktok.com/i18n/pixel"]'),
-    hsq: !!document.querySelector('script[src*="js.hs-scripts.com"], script[src*="js.hs-analytics.net"]')
+    hsq: !!document.querySelector('script[src*="js.hs-scripts.com"], script[src*="js.hs-analytics.net"]'),
+    mkt: !!document.querySelector('script[src*="munchkin.js"]'),
+    prd: !!document.querySelector('script[src*="pardot.com"], script[src*="pd.js"]')
   };
 }
 

@@ -1,5 +1,5 @@
 (function() {
-  const status = { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false };
+  const status = { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false, mkt: false, prd: false };
 
   function checkAnalytics() {
     try {
@@ -19,6 +19,10 @@
       status.ttq = status.ttq || typeof window.ttq === 'function' || typeof window._ttq === 'function';
       
       status.hsq = status.hsq || typeof window._hsq === 'object' || typeof window.hbspt === 'object';
+      
+      status.mkt = status.mkt || typeof window.Munchkin === 'object' || typeof window.Munchkin === 'function';
+      
+      status.prd = status.prd || typeof window.piAId !== 'undefined' || typeof window.piCId !== 'undefined';
 
       document.dispatchEvent(new CustomEvent('ANALYTICS_DIAGNOSTICS', {
         detail: status
@@ -46,6 +50,10 @@
       system = 'ttq';
     } else if (urlLower.includes('hs-analytics.net') || urlLower.includes('hs-scripts.com') || urlLower.includes('js.hs-analytics.net')) {
       system = 'hsq';
+    } else if (urlLower.includes('marketo.net') || urlLower.includes('mktorespond.com')) {
+      system = 'mkt';
+    } else if (urlLower.includes('pardot.com')) {
+      system = 'prd';
     }
     
     if (system && !status[system]) {

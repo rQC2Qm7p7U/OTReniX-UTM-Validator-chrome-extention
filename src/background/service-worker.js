@@ -76,6 +76,10 @@ if (typeof chrome !== 'undefined' && chrome.webRequest) {
         system = 'ttq';
       } else if (urlLower.includes('hs-analytics.net') || urlLower.includes('hs-scripts.com') || urlLower.includes('js.hs-analytics.net')) {
         system = 'hsq';
+      } else if (urlLower.includes('marketo.net') || urlLower.includes('mktorespond.com')) {
+        system = 'mkt';
+      } else if (urlLower.includes('pardot.com')) {
+        system = 'prd';
       }
       
       if (system) {
@@ -83,7 +87,7 @@ if (typeof chrome !== 'undefined' && chrome.webRequest) {
         const pageDataKey = `page_data_${tabId}`;
         try {
           const netRes = await sessionStore.get(networkKey);
-          const detected = netRes[networkKey] || { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false };
+          const detected = netRes[networkKey] || { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false, mkt: false, prd: false };
           
           if (!detected[system]) {
             detected[system] = true;
@@ -93,8 +97,8 @@ if (typeof chrome !== 'undefined' && chrome.webRequest) {
             const pageDataRes = await sessionStore.get(pageDataKey);
             const pageData = pageDataRes[pageDataKey];
             if (pageData) {
-              pageData.analyticsStatus = pageData.analyticsStatus || { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false };
-              pageData.detectedScripts = pageData.detectedScripts || { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false };
+              pageData.analyticsStatus = pageData.analyticsStatus || { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false, mkt: false, prd: false };
+              pageData.detectedScripts = pageData.detectedScripts || { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false, mkt: false, prd: false };
               
               pageData.analyticsStatus[system] = true;
               pageData.detectedScripts[system] = true;
@@ -184,7 +188,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           ym: message.analyticsStatus.ym || !!networkDetected.ym,
           fbq: message.analyticsStatus.fbq || !!networkDetected.fbq,
           ttq: message.analyticsStatus.ttq || !!networkDetected.ttq,
-          hsq: message.analyticsStatus.hsq || !!networkDetected.hsq
+          hsq: message.analyticsStatus.hsq || !!networkDetected.hsq,
+          mkt: message.analyticsStatus.mkt || !!networkDetected.mkt,
+          prd: message.analyticsStatus.prd || !!networkDetected.prd
         };
 
         const mergedDetectedScripts = {
@@ -193,7 +199,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           ym: message.detectedScripts.ym || !!networkDetected.ym,
           fbq: message.detectedScripts.fbq || !!networkDetected.fbq,
           ttq: message.detectedScripts.ttq || !!networkDetected.ttq,
-          hsq: message.detectedScripts.hsq || !!networkDetected.hsq
+          hsq: message.detectedScripts.hsq || !!networkDetected.hsq,
+          mkt: message.detectedScripts.mkt || !!networkDetected.mkt,
+          prd: message.detectedScripts.prd || !!networkDetected.prd
         };
 
         pageData = {
@@ -263,12 +271,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       // Identify marketing cookies & storage variables
       const analyticsVariables = {};
       message.cookies.forEach(c => {
-        if (c.name.includes('_ga') || c.name.includes('_ym') || c.name.includes('li_fat') || c.name.includes('hubspot')) {
+        if (c.name.includes('_ga') || c.name.includes('_ym') || c.name.includes('li_fat') || c.name.includes('hubspot') || c.name.includes('_mkto_trk') || c.name.includes('pardot')) {
           analyticsVariables[c.name] = c.value;
         }
       });
       Object.keys(message.storages.local).forEach(k => {
-        if (k.includes('roistat') || k.includes('utm') || k.includes('_ga')) {
+        if (k.includes('roistat') || k.includes('utm') || k.includes('_ga') || k.includes('_mkto_trk') || k.includes('hubspot') || k.includes('pardot')) {
           analyticsVariables[k] = message.storages.local[k];
         }
       });

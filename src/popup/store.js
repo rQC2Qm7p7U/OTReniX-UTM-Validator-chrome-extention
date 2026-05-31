@@ -182,14 +182,16 @@ export const calculateHealthScore = (forms, redirects, storages, cookies, urlStr
   }
 
   // 5. Warning: Core analytics cookies missing, though script indicators might exist
-  // We check if standard tracking cookies (_ga for Google Analytics, _ym_uid for Yandex Metrica) are missing
   const activeCookies = cookies.map(c => c.name.toLowerCase());
   const hasGa = activeCookies.some(name => name.includes('_ga'));
   const hasYm = activeCookies.some(name => name.includes('_ym_uid') || name.startsWith('_ym_'));
+  const hasHubSpot = activeCookies.some(name => name.includes('hubspotutk'));
+  const hasMarketo = activeCookies.some(name => name.includes('_mkto_trk'));
   
   const missingCookies = [];
-  if (!hasGa) missingCookies.push('Google Analytics (_ga)');
-  if (!hasYm) missingCookies.push('Yandex Metrica (_ym_uid)');
+  // For enterprise B2B stack, don't penalize GA/YM missing if HubSpot or Marketo tracking is active
+  if (!hasGa && !hasHubSpot && !hasMarketo) missingCookies.push('Google Analytics (_ga)');
+  if (!hasYm && !hasHubSpot && !hasMarketo) missingCookies.push('Yandex Metrica (_ym_uid)');
   
   if (missingCookies.length > 0) {
     const penaltyVal = 10;
@@ -211,7 +213,9 @@ export const calculateHealthScore = (forms, redirects, storages, cookies, urlStr
       { key: 'ym', label: 'Yandex Metrica' },
       { key: 'fbq', label: 'Facebook Pixel' },
       { key: 'ttq', label: 'TikTok Pixel' },
-      { key: 'hsq', label: 'HubSpot Tracking' }
+      { key: 'hsq', label: 'HubSpot Tracking' },
+      { key: 'mkt', label: 'Marketo Tracking' },
+      { key: 'prd', label: 'Salesforce Pardot' }
     ];
 
     checkSystems.forEach(sys => {
@@ -253,8 +257,8 @@ export const useStore = create((set, get) => ({
   // Custom branding & tracking
   whiteLabel: { agencyName: '', email: '', phone: '', website: '', logoBase64: '' },
   customPIIKeys: [],
-  detectedScripts: { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false },
-  analyticsStatus: { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false },
+  detectedScripts: { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false, mkt: false, prd: false },
+  analyticsStatus: { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false, mkt: false, prd: false },
 
   // Setters/Actions
   setPageData: (data) => {
@@ -277,8 +281,8 @@ export const useStore = create((set, get) => ({
       cookies,
       storages,
       redirects,
-      detectedScripts: detectedScripts || { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false },
-      analyticsStatus: analyticsStatus || { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false },
+      detectedScripts: detectedScripts || { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false, mkt: false, prd: false },
+      analyticsStatus: analyticsStatus || { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false, mkt: false, prd: false },
       healthScore: score,
       penalties
     });

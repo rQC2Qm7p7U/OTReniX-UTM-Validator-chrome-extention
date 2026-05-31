@@ -148,7 +148,7 @@ export default function Popup() {
 
   // ─── Developer snippets ───
   const devCodeSnippet = useMemo(() => {
-    const allKeys = [...new Set(['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'li_fat_id', 'hubspotutk', ...customB2BKeys])];
+    const allKeys = [...new Set(['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'li_fat_id', 'hubspotutk', '_mkto_trk', 'pi_opt_in', ...customB2BKeys])];
     
     let htmlInputs = '';
     allKeys.forEach(k => {
@@ -210,7 +210,7 @@ export default function Popup() {
 
   // ─── Markdown report ───
   const markdownReport = useMemo(() => {
-    const allKeys = [...new Set(['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'li_fat_id', 'hubspotutk', ...customB2BKeys])];
+    const allKeys = [...new Set(['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'li_fat_id', 'hubspotutk', '_mkto_trk', 'pi_opt_in', ...customB2BKeys])];
     let md = `# OTReniX Lead Attribution Audit Log\n`;
     md += `**Date:** ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}\n`;
     md += `**Target URL:** ${url || 'unknown'}\n`;
