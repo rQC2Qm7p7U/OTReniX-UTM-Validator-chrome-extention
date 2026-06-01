@@ -5,16 +5,16 @@ import { DEFAULT_B2B_KEYS } from './store';
 const PdfReport = forwardRef(({
   whiteLabel,
   url,
-  healthScore,
-  forms,
-  cookies,
-  redirects,
+  healthScore = 100,
+  forms = [],
+  cookies = [],
+  redirects = [],
   screenshotUrl,
-  analyticsStatus,
-  detectedScripts,
-  penalties,
+  analyticsStatus = {},
+  detectedScripts = {},
+  penalties = [],
   customB2BKeys = [],
-  devCodeSnippet
+  devCodeSnippet = {}
 }, ref) => {
   const theme = {
     stroke: healthScore >= 80 ? '#10b981' : healthScore >= 60 ? '#f97316' : '#ef4444',
@@ -57,7 +57,18 @@ const PdfReport = forwardRef(({
     };
   }, [cookies]);
 
-  const allKeys = [...new Set(['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'li_fat_id', 'hubspotutk', '_mkto_trk', 'pi_opt_in', ...customB2BKeys])];
+  const allKeys = React.useMemo(() => {
+    return [...new Set([...DEFAULT_B2B_KEYS, ...customB2BKeys])];
+  }, [customB2BKeys]);
+
+  const urlParamsCount = React.useMemo(() => {
+    if (!url) return 0;
+    try {
+      return new URL(url).searchParams.size;
+    } catch (e) {
+      return 0;
+    }
+  }, [url]);
 
   return (
     <div style={{ position: 'fixed', left: '-9999px', top: '0px', width: '794px', zIndex: -9999 }}>
@@ -125,7 +136,7 @@ const PdfReport = forwardRef(({
                 <div className="flex flex-col gap-0.5">
                   <span className="text-slate-400 text-[10px]">URL Parameters:</span>
                   <span className="text-white text-xs font-bold">
-                    {url ? new URL(url).searchParams.size : 0}
+                    {urlParamsCount}
                   </span>
                 </div>
                 <div className="flex flex-col gap-0.5">

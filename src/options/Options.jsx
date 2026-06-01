@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useStore, DEFAULT_B2B_KEYS } from '../popup/store';
 import { 
   Save, 
   Settings, 
   Terminal, 
   Plus, 
-  Trash2, 
   Check, 
   Zap, 
   Info, 
@@ -21,7 +20,6 @@ export default function Options() {
     webhookUrl,
     customB2BKeys,
     webhookLogs,
-    isLoading,
     loadSettings,
     setWebhookUrl,
     setCustomB2BKeys,
@@ -60,7 +58,7 @@ export default function Options() {
     (async () => {
       await loadSettings();
     })();
-  }, []);
+  }, [loadSettings]);
 
   // Sync component state when settings are loaded from store
   useEffect(() => {
@@ -77,7 +75,7 @@ export default function Options() {
     setInputApiKey(geminiApiKey || '');
   }, [webhookUrl, customB2BKeys, whiteLabel, customPIIKeys, geminiApiKey]);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     // Validate Webhook URL format if provided
     const cleanUrl = inputUrl.trim();
     if (cleanUrl !== '') {
@@ -105,23 +103,38 @@ export default function Options() {
     setGeminiApiKey(inputApiKey.trim());
     setSavedStatus(true);
     setTimeout(() => setSavedStatus(false), 2000);
-  };
+  }, [
+    inputUrl,
+    keysList,
+    agencyName,
+    wlEmail,
+    wlPhone,
+    wlWebsite,
+    logoBase64,
+    piiList,
+    inputApiKey,
+    setWebhookUrl,
+    setCustomB2BKeys,
+    setWhiteLabel,
+    setCustomPIIKeys,
+    setGeminiApiKey
+  ]);
 
-  const handleAddKey = (e) => {
+  const handleAddKey = useCallback((e) => {
     e.preventDefault();
     const cleanKey = newKey.trim().toLowerCase();
     if (cleanKey && !keysList.includes(cleanKey) && !DEFAULT_B2B_KEYS.includes(cleanKey)) {
       setKeysList([...keysList, cleanKey]);
       setNewKey('');
     }
-  };
+  }, [newKey, keysList]);
 
-  const handleRemoveKey = (keyToRemove) => {
+  const handleRemoveKey = useCallback((keyToRemove) => {
     setKeysList(keysList.filter(k => k !== keyToRemove));
-  };
+  }, [keysList]);
 
   // Add custom PII key
-  const handleAddPIIKey = (e) => {
+  const handleAddPIIKey = useCallback((e) => {
     e.preventDefault();
     const cleanKey = newPIIKey.trim().toLowerCase();
     const defaultPII = ['password', 'pwd', 'card', 'cvv', 'cc_', 'passport', 'phone', 'email'];
@@ -129,14 +142,14 @@ export default function Options() {
       setPiiList([...piiList, cleanKey]);
       setNewPIIKey('');
     }
-  };
+  }, [newPIIKey, piiList]);
 
-  const handleRemovePIIKey = (keyToRemove) => {
+  const handleRemovePIIKey = useCallback((keyToRemove) => {
     setPiiList(piiList.filter(k => k !== keyToRemove));
-  };
+  }, [piiList]);
 
   // Logo file upload & Canvas compression
-  const handleLogoUpload = (e) => {
+  const handleLogoUpload = useCallback((e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -175,15 +188,18 @@ export default function Options() {
           setLogoError('Failed to process/compress image.');
         }
       };
+      img.onerror = () => {
+        setLogoError('Failed to load image file.');
+      };
       img.src = event.target.result;
     };
     reader.readAsDataURL(file);
-  };
+  }, []);
 
-  const handleRemoveLogo = () => {
+  const handleRemoveLogo = useCallback(() => {
     setLogoBase64('');
     setLogoError('');
-  };
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center py-10 px-4">

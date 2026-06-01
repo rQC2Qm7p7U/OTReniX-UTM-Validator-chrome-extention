@@ -108,12 +108,12 @@ if (typeof chrome !== 'undefined' && chrome.webRequest) {
 
             // Sync variable back to page content script if active
             chrome.tabs.sendMessage(tabId, { type: 'NETWORK_PIXEL_DETECTED', system }, () => {
-              const err = chrome.runtime.lastError;
+              void chrome.runtime.lastError;
             });
             
             // Notify UI popup to update visual state
             chrome.runtime.sendMessage({ type: 'PAGE_DATA_UPDATED', tabId }, () => {
-              const err = chrome.runtime.lastError;
+              void chrome.runtime.lastError;
             });
           }
         } catch (e) {

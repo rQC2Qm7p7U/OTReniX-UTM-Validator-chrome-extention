@@ -325,12 +325,16 @@ export const useStore = create((set, get) => ({
 
   setWebhookUrl: (url) => {
     set({ webhookUrl: url });
-    chrome.storage.sync.set({ webhookUrl: url });
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
+      chrome.storage.sync.set({ webhookUrl: url });
+    }
   },
 
   setCustomB2BKeys: (keys) => {
     set({ customB2BKeys: keys });
-    chrome.storage.sync.set({ customB2BKeys: keys });
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
+      chrome.storage.sync.set({ customB2BKeys: keys });
+    }
     
     const state = get();
     const { score, penalties } = calculateHealthScore(
@@ -355,32 +359,42 @@ export const useStore = create((set, get) => ({
       logoBase64: wl?.logoBase64 || ''
     };
     set({ whiteLabel: merged });
-    chrome.storage.local.set({ whiteLabel: merged });
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ whiteLabel: merged });
+    }
   },
 
   setGeminiApiKey: (key) => {
     set({ geminiApiKey: key });
-    chrome.storage.local.set({ geminiApiKey: key });
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ geminiApiKey: key });
+    }
   },
 
   setCustomPIIKeys: (keys) => {
     const cleanKeys = Array.isArray(keys) ? keys : [];
     set({ customPIIKeys: cleanKeys });
-    chrome.storage.sync.set({ customPIIKeys: cleanKeys });
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
+      chrome.storage.sync.set({ customPIIKeys: cleanKeys });
+    }
   },
 
   toggleSandboxMode: (enabled) => {
     set({ sandboxMode: enabled });
-    chrome.storage.local.set({ sandboxMode: enabled });
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ sandboxMode: enabled });
+    }
 
     // Notify only the currently active tab — no need to broadcast to all N tabs
-    chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
-      if (tab?.id) {
-        chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_SANDBOX', enabled }, () => {
-          void chrome.runtime.lastError; // suppress expected error if content script not loaded
-        });
-      }
-    });
+    if (typeof chrome !== 'undefined' && chrome.tabs) {
+      chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+        if (tab?.id) {
+          chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_SANDBOX', enabled }, () => {
+            void chrome.runtime.lastError; // suppress expected error if content script not loaded
+          });
+        }
+      });
+    }
   },
 
 
@@ -394,12 +408,16 @@ export const useStore = create((set, get) => ({
     // Move storage write outside set() reducer to avoid side-effects inside pure state updater
     const logs = [newLog, ...get().webhookLogs].slice(0, 50);
     set({ webhookLogs: logs });
-    chrome.storage.local.set({ webhookLogs: logs });
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ webhookLogs: logs });
+    }
   },
 
   clearWebhookLogs: () => {
     set({ webhookLogs: [] });
-    chrome.storage.local.set({ webhookLogs: [] });
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ webhookLogs: [] });
+    }
   },
 
   loadSettings: async () => {

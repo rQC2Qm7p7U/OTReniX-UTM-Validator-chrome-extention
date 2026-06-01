@@ -382,12 +382,12 @@ function handleSubmit(event) {
   });
 
   // Show visual notification
-  showInterceptNotification(form);
+  showInterceptNotification();
 }
 
 document.addEventListener('submit', handleSubmit, true);
 
-function showInterceptNotification(form) {
+function showInterceptNotification() {
   const container = document.createElement('div');
   container.style.position = 'fixed';
   container.style.bottom = '20px';

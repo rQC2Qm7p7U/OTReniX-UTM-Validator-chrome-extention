@@ -14,8 +14,21 @@ export default defineConfig([
       reactRefresh.configs.vite,
     ],
     languageOptions: {
-      globals: globals.browser,
+      globals: {
+        ...globals.browser,
+        chrome: 'readonly'
+      },
       parserOptions: { ecmaFeatures: { jsx: true } },
+    },
+    rules: {
+      'no-unused-vars': ['error', { 
+        'argsIgnorePattern': '^_',
+        'varsIgnorePattern': '^React$|^_',
+        'caughtErrors': 'none'
+      }],
+      'react-hooks/set-state-in-effect': 'off',
+      'no-empty': ['error', { 'allowEmptyCatch': true }],
+      'no-useless-assignment': 'off'
     },
   },
 ])
