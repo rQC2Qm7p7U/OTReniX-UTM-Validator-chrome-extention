@@ -19,7 +19,6 @@ export default function Popup() {
     url,
     forms,
     cookies,
-    storages,
     redirects,
     healthScore,
     penalties,
@@ -267,9 +266,9 @@ export default function Popup() {
     });
   }, [markdownReport]);
 
-  const handleOpenSettings = () => {
+  const handleOpenSettings = useCallback(() => {
     chrome.runtime.openOptionsPage();
-  };
+  }, []);
 
   if (isLoading) {
     return (

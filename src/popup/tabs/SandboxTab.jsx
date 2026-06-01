@@ -4,7 +4,7 @@ import { Terminal } from 'lucide-react';
 export default function SandboxTab({
   sandboxMode,
   webhookUrl,
-  webhookLogs,
+  webhookLogs = [],
   toggleSandboxMode,
   clearWebhookLogs,
   handleOpenSettings

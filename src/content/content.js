@@ -158,15 +158,15 @@ function scanStorageAndCookies() {
     }
   } catch (e) {}
 
-  // Read cookies (all — they are small and already key=value pairs)
+  // Read cookies — use indexOf instead of split('=') to preserve Base64/JWT values containing '='
   try {
     const rawCookies = document.cookie.split(';');
     rawCookies.forEach(cookie => {
-      const parts = cookie.split('=');
-      if (parts.length >= 2) {
+      const eqIdx = cookie.indexOf('=');
+      if (eqIdx > -1) {
         cookies.push({
-          name: parts[0].trim(),
-          value: parts[1].trim()
+          name: cookie.slice(0, eqIdx).trim(),
+          value: cookie.slice(eqIdx + 1).trim()
         });
       }
     });
@@ -313,12 +313,13 @@ function maskValue(fieldName, value) {
     return '***';
   }
   
-  // Email masking
-  if (nameLower.includes('email') || value.includes('@')) {
-    const parts = value.split('@');
-    if (parts.length === 2) {
-      const name = parts[0];
-      const domain = parts[1];
+  // Email masking: only trigger when the field name indicates an email field
+  // (bare includes('@') would incorrectly mask twitter handles like '@company')
+  if (nameLower.includes('email') || (value.includes('@') && nameLower.includes('email'))) {
+    const atIdx = value.indexOf('@');
+    if (atIdx > -1) {
+      const name = value.slice(0, atIdx);
+      const domain = value.slice(atIdx + 1);
       if (name.length <= 2) {
         return name[0] + '***@' + domain;
       }
@@ -490,12 +491,14 @@ if (isContextValid()) {
 }
 
 // Receive analytics status reports from inject.js
-document.addEventListener('ANALYTICS_DIAGNOSTICS', (event) => {
+// Store as named function so it can be removed in cleanupExtensionListeners if needed
+function handleAnalyticsDiagnostics(event) {
   if (event.detail) {
     currentAnalyticsStatus = { ...currentAnalyticsStatus, ...event.detail };
     performScan();
   }
-});
+}
+document.addEventListener('ANALYTICS_DIAGNOSTICS', handleAnalyticsDiagnostics);
 
 // Inject diagnostics script into page context (Main World)
 if (window.self === window.top) {

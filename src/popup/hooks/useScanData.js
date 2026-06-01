@@ -66,8 +66,9 @@ export function useScanData() {
   const handleAutoFillMocks = useCallback(async () => {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (!tab || !tab.id) return;
-      
+      // Guard: tab.url can be undefined or a chrome:// URL (no permission to navigate)
+      if (!tab || !tab.id || !tab.url || tab.url.startsWith('chrome://')) return;
+
       const currentUrl = new URL(tab.url);
       currentUrl.searchParams.set('utm_source', 'google');
       currentUrl.searchParams.set('utm_medium', 'cpc');
@@ -77,7 +78,7 @@ export function useScanData() {
       currentUrl.searchParams.set('hubspotutk', 'test_hubspot_777');
       currentUrl.searchParams.set('_mkto_trk', 'test_marketo_555');
       currentUrl.searchParams.set('pi_opt_in', 'true');
-      
+
       chrome.tabs.update(tab.id, { url: currentUrl.toString() }, () => {
         setTimeout(triggerScanAndFetch, 500);
       });
@@ -90,7 +91,10 @@ export function useScanData() {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab || !tab.id) return;
-      chrome.tabs.sendMessage(tab.id, { type: 'HIGHLIGHT_FORM', formIndex: index });
+      // Empty callback suppresses Chrome's unchecked lastError console error on protected pages
+      chrome.tabs.sendMessage(tab.id, { type: 'HIGHLIGHT_FORM', formIndex: index }, () => {
+        void chrome.runtime.lastError;
+      });
     } catch (e) {
       console.error(e);
     }

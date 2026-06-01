@@ -13,13 +13,13 @@ import {
 
 export default function DashboardTab({
   healthScore,
-  forms,
+  forms = [],
   cookies = [],
-  redirects,
+  redirects = [],
   url,
-  detectedScripts,
-  analyticsStatus,
-  penalties,
+  detectedScripts = {},
+  analyticsStatus = {},
+  penalties = [],
   copiedDevs,
   generatingPdf,
   handleAutoFillMocks,

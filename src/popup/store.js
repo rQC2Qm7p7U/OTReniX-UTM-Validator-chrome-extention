@@ -36,8 +36,10 @@ export const calculateHealthScore = (forms, redirects, storages, cookies, urlStr
   }
   
   const urlParams = Array.from(urlObj.searchParams.keys());
-  const activeTrackingParamsInUrl = urlParams.filter(key => 
-    allTrackingKeys.map(k => k.toLowerCase()).includes(key.toLowerCase())
+  // Hoist lowercased list outside filter to avoid O(n×m) re-allocation per iteration
+  const allTrackingKeysLower = allTrackingKeys.map(k => k.toLowerCase());
+  const activeTrackingParamsInUrl = urlParams.filter(key =>
+    allTrackingKeysLower.includes(key.toLowerCase())
   );
   
   // 1. Critical: UTM in URL but missing in Form Hidden Fields or Storage
@@ -99,7 +101,9 @@ export const calculateHealthScore = (forms, redirects, storages, cookies, urlStr
     let firstUrlObj;
     try {
       firstUrlObj = new URL(firstRedirect.from);
-    } catch(e) {}
+    } catch (e) {
+      console.warn('[UTM Validator] Invalid redirect URL:', firstRedirect.from, e);
+    }
     
     if (firstUrlObj) {
       const firstUrlTrackingParams = Array.from(firstUrlObj.searchParams.keys()).filter(key => allTrackingKeys.includes(key));
@@ -287,6 +291,9 @@ export const useStore = create((set, get) => ({
   detectedScripts: { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false, mkt: false, prd: false },
   analyticsStatus: { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false, mkt: false, prd: false },
 
+  // Shared analytics flags default — avoids 4× copy-paste across setPageData branches
+  // NOTE: update this object when adding new analytics systems
+
   // Setters/Actions
   setPageData: (data) => {
     const { url, forms, cookies, storages, redirects, detectedScripts, analyticsStatus } = data;
@@ -302,14 +309,15 @@ export const useStore = create((set, get) => ({
       analyticsStatus || {}
     );
     
+    const EMPTY_ANALYTICS = { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false, mkt: false, prd: false };
     set({
       url,
       forms,
       cookies,
       storages,
       redirects,
-      detectedScripts: detectedScripts || { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false, mkt: false, prd: false },
-      analyticsStatus: analyticsStatus || { gtm: false, ga4: false, ym: false, fbq: false, ttq: false, hsq: false, mkt: false, prd: false },
+      detectedScripts: detectedScripts || EMPTY_ANALYTICS,
+      analyticsStatus: analyticsStatus || EMPTY_ANALYTICS,
       healthScore: score,
       penalties
     });
@@ -378,15 +386,15 @@ export const useStore = create((set, get) => ({
 
   addWebhookLog: (log) => {
     const newLog = {
-      id: Math.random().toString(36).substring(7),
+      // crypto.randomUUID() is available in MV3 extension contexts — collision-free vs Math.random()
+      id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36),
       timestamp: new Date().toLocaleTimeString(),
       ...log
     };
-    set((state) => {
-      const logs = [newLog, ...state.webhookLogs].slice(0, 50);
-      chrome.storage.local.set({ webhookLogs: logs });
-      return { webhookLogs: logs };
-    });
+    // Move storage write outside set() reducer to avoid side-effects inside pure state updater
+    const logs = [newLog, ...get().webhookLogs].slice(0, 50);
+    set({ webhookLogs: logs });
+    chrome.storage.local.set({ webhookLogs: logs });
   },
 
   clearWebhookLogs: () => {
@@ -396,34 +404,40 @@ export const useStore = create((set, get) => ({
 
   loadSettings: async () => {
     set({ isLoading: true });
-    
-    const syncData = await new Promise(resolve => {
-      chrome.storage.sync.get(['webhookUrl', 'customB2BKeys', 'customPIIKeys'], (data) => resolve(data || {}));
-    });
-    
-    const localData = await new Promise(resolve => {
-      chrome.storage.local.get(['sandboxMode', 'webhookLogs', 'whiteLabel', 'geminiApiKey'], (data) => resolve(data || {}));
-    });
+    try {
+      const syncData = await new Promise(resolve => {
+        chrome.storage.sync.get(['webhookUrl', 'customB2BKeys', 'customPIIKeys'], (data) => resolve(data || {}));
+      });
 
-    const wl = localData.whiteLabel;
-    const mergedWhiteLabel = {
-      agencyName: wl?.agencyName || '',
-      email: wl?.email || '',
-      phone: wl?.phone || '',
-      website: wl?.website || '',
-      logoBase64: wl?.logoBase64 || ''
-    };
+      const localData = await new Promise(resolve => {
+        chrome.storage.local.get(['sandboxMode', 'webhookLogs', 'whiteLabel', 'geminiApiKey'], (data) => resolve(data || {}));
+      });
 
-    set({
-      webhookUrl: syncData.webhookUrl || 'https://n8n.yourservice.com/webhook/test-lead',
-      customB2BKeys: Array.isArray(syncData.customB2BKeys) ? syncData.customB2BKeys : [],
-      whiteLabel: mergedWhiteLabel,
-      customPIIKeys: Array.isArray(syncData.customPIIKeys) ? syncData.customPIIKeys : [],
-      sandboxMode: !!localData.sandboxMode,
-      webhookLogs: Array.isArray(localData.webhookLogs) ? localData.webhookLogs : [],
-      geminiApiKey: localData.geminiApiKey || '',
-      isLoading: false
-    });
+      const wl = localData.whiteLabel;
+      const mergedWhiteLabel = {
+        agencyName: wl?.agencyName || '',
+        email: wl?.email || '',
+        phone: wl?.phone || '',
+        website: wl?.website || '',
+        logoBase64: wl?.logoBase64 || ''
+      };
+
+      set({
+        webhookUrl: syncData.webhookUrl || 'https://n8n.yourservice.com/webhook/test-lead',
+        customB2BKeys: Array.isArray(syncData.customB2BKeys) ? syncData.customB2BKeys : [],
+        whiteLabel: mergedWhiteLabel,
+        customPIIKeys: Array.isArray(syncData.customPIIKeys) ? syncData.customPIIKeys : [],
+        sandboxMode: !!localData.sandboxMode,
+        webhookLogs: Array.isArray(localData.webhookLogs) ? localData.webhookLogs : [],
+        geminiApiKey: localData.geminiApiKey || ''
+      });
+    } catch (e) {
+      // Extension context may be invalidated; ensure UI never stays frozen
+      console.error('[UTM Validator] loadSettings failed:', e);
+    } finally {
+      // Always reset loading state regardless of success or error
+      set({ isLoading: false });
+    }
   }
 }));
 

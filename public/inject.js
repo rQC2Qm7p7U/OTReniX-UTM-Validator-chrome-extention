@@ -62,30 +62,35 @@
     }
   }
 
-  // Set up low-level network request interceptors
-  try {
-    const originalFetch = window.fetch;
-    window.fetch = function(...args) {
-      const url = args[0];
-      detectAnalyticsFromUrl(url);
-      return originalFetch.apply(this, args);
-    };
-
-    const originalOpen = XMLHttpRequest.prototype.open;
-    XMLHttpRequest.prototype.open = function(method, url, ...args) {
-      detectAnalyticsFromUrl(url);
-      return originalOpen.apply(this, [method, url, ...args]);
-    };
-
-    if (navigator.sendBeacon) {
-      const originalSendBeacon = navigator.sendBeacon;
-      navigator.sendBeacon = function(url, data) {
+  // Guard monkey-patches against double-wrapping on SPA re-navigation
+  // Using Symbol.for() prevents leaking a named key to the page's window object
+  const PATCH_SENTINEL = Symbol.for('__utmValidatorPatched');
+  if (!window[PATCH_SENTINEL]) {
+    window[PATCH_SENTINEL] = true;
+    try {
+      const originalFetch = window.fetch;
+      window.fetch = function(...args) {
+        const url = args[0];
         detectAnalyticsFromUrl(url);
-        return originalSendBeacon.apply(this, [url, data]);
+        return originalFetch.apply(this, args);
       };
+
+      const originalOpen = XMLHttpRequest.prototype.open;
+      XMLHttpRequest.prototype.open = function(method, url, ...args) {
+        detectAnalyticsFromUrl(url);
+        return originalOpen.apply(this, [method, url, ...args]);
+      };
+
+      if (navigator.sendBeacon) {
+        const originalSendBeacon = navigator.sendBeacon;
+        navigator.sendBeacon = function(url, data) {
+          detectAnalyticsFromUrl(url);
+          return originalSendBeacon.apply(this, [url, data]);
+        };
+      }
+    } catch (err) {
+      console.warn('[UTM Validator Inject] Network interceptor hook failed:', err);
     }
-  } catch (err) {
-    console.warn('[UTM Validator Inject] Network interceptor hook failed:', err);
   }
 
   // Poll for analytics scripts initialization
@@ -101,8 +106,9 @@
     }
   }, 500);
 
-  window.addEventListener('load', checkAnalytics);
-  window.addEventListener('DOMContentLoaded', checkAnalytics);
+  // { once: true } automatically removes the listener after first fire — no manual cleanup needed
+  window.addEventListener('load', checkAnalytics, { once: true });
+  window.addEventListener('DOMContentLoaded', checkAnalytics, { once: true });
 
   // Trigger checks on user interaction events (since optimization plugins like WP Rocket delay scripts until interaction)
   const interactionEvents = ['scroll', 'mousemove', 'keydown', 'click', 'touchstart'];

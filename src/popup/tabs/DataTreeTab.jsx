@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   RefreshCw, 
   AlertTriangle, 
@@ -11,8 +11,10 @@ import {
 import { DEFAULT_B2B_KEYS } from '../store';
 
 const generatePromptText = (form, fIdx, allKeys, currentUrl, cookies, detectedScripts) => {
+  // Guard: form.inputs can be undefined on Shadow DOM or malformed scan responses
+  const inputs = form.inputs || [];
   const attributionInputs = [];
-  form.inputs.forEach(input => {
+  inputs.forEach(input => {
     const inputNameStr = typeof input.name === 'string' ? input.name : '';
     const isTrackingKey = inputNameStr && allKeys.some(
       k => inputNameStr.toLowerCase().includes(k.toLowerCase())
@@ -61,7 +63,7 @@ Form Details:
 - Action: ${form.action || 'none'}
 - Inside Shadow DOM: ${form.isShadow ? 'Yes' : 'No'}
 - Inputs:
-${form.inputs.map(inp => `  * name="${inp.name || ''}", id="${inp.id || ''}", class="${inp.className || ''}", type="${inp.type || ''}", hidden=${inp.isHidden ? 'Yes' : 'No'}`).join('\n')}
+${inputs.map(inp => `  * name="${inp.name || ''}", id="${inp.id || ''}", class="${inp.className || ''}", type="${inp.type || ''}", hidden=${inp.isHidden ? 'Yes' : 'No'}`).join('\n')}
 
 Contextual Page Metadata:
 - Current Page URL: ${currentUrl || 'unknown'}
@@ -105,7 +107,11 @@ export default function DataTreeTab({
   cookies = [],
   detectedScripts = {}
 }) {
-  const allKeys = [...new Set(['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'li_fat_id', 'hubspotutk', '_mkto_trk', 'pi_opt_in', ...customB2BKeys])];
+  // Use DEFAULT_B2B_KEYS from store to stay in sync — previously a hardcoded list was missing wbraid, gbraid, yclid
+  const allKeys = useMemo(
+    () => [...new Set([...DEFAULT_B2B_KEYS, ...customB2BKeys])],
+    [customB2BKeys]
+  );
   const [aiPatches, setAiPatches] = useState({});
 
   const handleCopyPrompt = (fIdx, form) => {

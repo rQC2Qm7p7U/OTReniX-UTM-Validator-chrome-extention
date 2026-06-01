@@ -217,7 +217,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         // Subframe (iframe) form reports are appended
         if (!pageData) {
           pageData = {
-            url: sender.tab.url,
+            url: sender.tab?.url || '',
             forms: [],
             cookies: [],
             storages: { local: {}, session: {} },
@@ -242,8 +242,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       
       // Notify popup with a callback to suppress unhandled rejections
       chrome.runtime.sendMessage({ type: 'PAGE_DATA_UPDATED', tabId }, () => {
-        // Suppress "Receiving end does not exist" error
-        const err = chrome.runtime.lastError;
+        void chrome.runtime.lastError; // suppress "Receiving end does not exist"
       });
     })();
     return;
@@ -319,7 +318,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const localData = await chrome.storage.local.get('webhookLogs');
       const logs = localData.webhookLogs || [];
       const newLog = {
-        id: Math.random().toString(36).substring(7),
+        // crypto.randomUUID() is available in MV3 service workers — collision-free vs Math.random()
+        id: crypto.randomUUID(),
         timestamp: new Date().toLocaleTimeString(),
         formId: message.formId,
         url: cleanUrl,
@@ -338,9 +338,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         type: 'WEBHOOK_SUBMITTED_LOG', 
         log: newLog 
       }, () => {
-        const err = chrome.runtime.lastError;
+        void chrome.runtime.lastError; // suppress "Receiving end does not exist"
       });
     })();
-    return;
+    return false;
   }
+  // Explicit fallback — no response needed for unrecognized message types
+  return false;
 });
