@@ -376,4 +376,90 @@ try {
   console.error('❌ Test 13 failed:', e.message);
 }
 
+// Test Case 14: GA cookie present but CookieConsent value is explicitly 'false' (triggers penalty -15)
+try {
+  const data = createMockData({
+    url: 'https://example.com?utm_source=google',
+    forms: [
+      {
+        id: 'lead-form',
+        inputs: [
+          { name: 'utm_source', type: 'hidden', value: 'google' }
+        ]
+      }
+    ],
+    cookies: [
+      { name: '_ga', value: 'GA1.2.3' },
+      { name: '_ym_uid', value: 'YM123' },
+      { name: 'CookieConsent', value: 'marketing:false' }
+    ]
+  });
+
+  const result = calculateHealthScore(data.forms, data.redirects, data.storages, data.cookies, data.url);
+  assert.strictEqual(result.score, 85);
+  assert.ok(result.penalties.some(p => p.label.includes('GDPR/CCPA Consent Denied Violation')));
+  console.log('✅ Test 14: GA cookie present but CookieConsent value is explicitly denied triggers penalty (-15).');
+} catch (e) {
+  console.error('❌ Test 14 failed:', e.message);
+}
+
+// Test Case 15: GA cookie present and Consent key is set in localStorage instead of cookies (no penalty)
+try {
+  const data = createMockData({
+    url: 'https://example.com?utm_source=google',
+    forms: [
+      {
+        id: 'lead-form',
+        inputs: [
+          { name: 'utm_source', type: 'hidden', value: 'google' }
+        ]
+      }
+    ],
+    cookies: [
+      { name: '_ga', value: 'GA1.2.3' },
+      { name: '_ym_uid', value: 'YM123' }
+    ],
+    storages: {
+      local: {
+        'klaro': '{"marketing":true}'
+      },
+      session: {}
+    }
+  });
+
+  const result = calculateHealthScore(data.forms, data.redirects, data.storages, data.cookies, data.url);
+  assert.strictEqual(result.score, 100);
+  assert.strictEqual(result.penalties.length, 0);
+  console.log('✅ Test 15: Consent key present in localStorage matches and bypasses compliance penalty.');
+} catch (e) {
+  console.error('❌ Test 15 failed:', e.message);
+}
+
+// Test Case 16: Modern Clarity tracker _clck cookie present with no consent triggers penalty (-15)
+try {
+  const data = createMockData({
+    url: 'https://example.com?utm_source=google',
+    forms: [
+      {
+        id: 'lead-form',
+        inputs: [
+          { name: 'utm_source', type: 'hidden', value: 'google' }
+        ]
+      }
+    ],
+    cookies: [
+      { name: '_clck', value: 'ClarityID123' },
+      { name: '_ga', value: 'GA1.2.3' },
+      { name: '_ym_uid', value: 'YM123' }
+    ]
+  });
+
+  const result = calculateHealthScore(data.forms, data.redirects, data.storages, data.cookies, data.url);
+  assert.strictEqual(result.score, 85);
+  assert.ok(result.penalties.some(p => p.label.includes('GDPR/CCPA Prior Consent Violation')));
+  console.log('✅ Test 16: Modern Clarity tracker cookie present with no consent triggers penalty (-15).');
+} catch (e) {
+  console.error('❌ Test 16 failed:', e.message);
+}
+
 console.log('\n=== Testing Complete! ===');

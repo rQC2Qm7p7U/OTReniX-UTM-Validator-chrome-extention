@@ -17,6 +17,83 @@ export const DEFAULT_B2B_KEYS = [
   'pi_opt_in'
 ];
 
+export const evaluateConsentState = (cookies = [], localStorage = {}, sessionStorage = {}) => {
+  const CONSENT_PATTERNS = [
+    'optanonconsent', 'optanonalertboxclosed', 'cookieconsent', 'cookieyes-consent', 
+    'cookieconsent_status', 'euconsent-v2', 'gdpr_consent', 'ccpa-consent', 
+    'klaro', 'civiccookiecontrol'
+  ];
+
+  // 1. Gather all consent sources (cookies + Web Storage)
+  const consentSources = [];
+  cookies.forEach(c => {
+    if (CONSENT_PATTERNS.some(pat => c.name.toLowerCase().includes(pat))) {
+      consentSources.push({ type: 'cookie', name: c.name, value: decodeURIComponent(c.value) });
+    }
+  });
+
+  Object.keys(localStorage || {}).forEach(key => {
+    if (CONSENT_PATTERNS.some(pat => key.toLowerCase().includes(pat))) {
+      consentSources.push({ type: 'local', name: key, value: String(localStorage[key]) });
+    }
+  });
+
+  Object.keys(sessionStorage || {}).forEach(key => {
+    if (CONSENT_PATTERNS.some(pat => key.toLowerCase().includes(pat))) {
+      consentSources.push({ type: 'session', name: key, value: String(sessionStorage[key]) });
+    }
+  });
+
+  if (consentSources.length === 0) {
+    return { hasConsentIndicator: false, isGranted: false, cmp: null };
+  }
+
+  // 2. Parse values to see if consent is explicitly granted or denied
+  let hasGranted = false;
+  let detectedCmp = 'Generic CMP';
+
+  for (const source of consentSources) {
+    const valLower = source.value.toLowerCase();
+    const nameLower = source.name.toLowerCase();
+
+    if (nameLower.includes('optanon')) {
+      detectedCmp = 'OneTrust';
+      // OneTrust uses group flags: C0002 is Analytics, C0004 is Target/Marketing.
+      // e.g. C0004:1 (Granted) or C0004:0 (Denied)
+      if (valLower.includes('c0002:1') || valLower.includes('c0004:1')) {
+        hasGranted = true;
+      }
+    } else if (nameLower.includes('cookiebot') || nameLower === 'cookieconsent') {
+      detectedCmp = 'Cookiebot';
+      if (valLower === 'true' || valLower === 'allow' || valLower === 'accept') {
+        hasGranted = true;
+      } else if (valLower.includes('marketing:true') || valLower.includes('statistics:true')) {
+        // Cookiebot format: statistics:true or marketing:true
+        hasGranted = true;
+      }
+    } else if (nameLower.includes('cookieyes')) {
+      detectedCmp = 'CookieYes';
+      // CookieYes format: marketing:yes or analytics:yes
+      if (valLower.includes('marketing:yes') || valLower.includes('analytics:yes')) {
+        hasGranted = true;
+      }
+    } else if (nameLower === 'cookieconsent_status') {
+      detectedCmp = 'Generic CMP';
+      // Simple cookie consent values: 'allow', 'accept', 'dismiss' (vs 'deny')
+      if (valLower === 'allow' || valLower === 'dismiss' || valLower === 'accept') {
+        hasGranted = true;
+      }
+    } else {
+      // General heuristic: check if value contains affirmative keywords
+      if (valLower.includes('allow') || valLower.includes('accept') || valLower.includes('true') || valLower.includes('yes') || valLower.includes(':1')) {
+        hasGranted = true;
+      }
+    }
+  }
+
+  return { hasConsentIndicator: true, isGranted: hasGranted, cmp: detectedCmp };
+};
+
 export const calculateHealthScore = (forms, redirects, storages, cookies, urlString, customB2BKeys = [], detectedScripts = {}, analyticsStatus = {}) => {
   forms = forms || [];
   redirects = redirects || [];
@@ -209,27 +286,38 @@ export const calculateHealthScore = (forms, redirects, storages, cookies, urlStr
     });
   }
 
-  // 5b. GDPR/CCPA Prior Consent Compliance check
-  const MARKETING_COOKIE_PATTERNS = ['_ga', '_gid', '_gat', '_gcl_au', '_ym_uid', '_ym_d', '_ym_isad', '_fbp', '_fbc', '_ttp', 'hubspotutk', '_mkto_trk', 'pi_opt_in'];
-  const CONSENT_COOKIE_PATTERNS = ['optanonconsent', 'optanonalertboxclosed', 'cookieconsent', 'cookieyes-consent', 'cookieconsent_status', 'euconsent-v2', 'gdpr_consent', 'ccpa-consent'];
+  // 5b. GDPR/CCPA Prior Consent Compliance check (value-aware)
+  const MARKETING_COOKIE_PATTERNS = [
+    '_ga', '_gid', '_gat', '_gcl_au', '_gcl_aw', '_gac_', '_ym_uid', '_ym_d', '_ym_isad', 
+    '_fbp', '_fbc', '_ttp', 'hubspotutk', '_mkto_trk', 'pi_opt_in',
+    'usermatchhistory', 'li_sugr', 'analyticsynchistory', 'li_fat_id',
+    '_clck', '_clsk', '_hjsessionuser_', '_hjsession_', 'prism_', '_pin_unauth', 'personalization_id'
+  ];
 
   const foundMarketingCookies = cookies
     .filter(c => MARKETING_COOKIE_PATTERNS.some(pat => c.name.toLowerCase().includes(pat)))
     .map(c => c.name);
-  const foundConsentCookies = cookies
-    .filter(c => CONSENT_COOKIE_PATTERNS.some(pat => c.name.toLowerCase().includes(pat)))
-    .map(c => c.name);
 
   const hasMarketing = foundMarketingCookies.length > 0;
-  const hasConsent = foundConsentCookies.length > 0;
+  const consent = evaluateConsentState(cookies, storages?.local, storages?.session);
+  const isViolating = (hasMarketing && !consent.hasConsentIndicator) || (hasMarketing && consent.hasConsentIndicator && !consent.isGranted);
 
-  if (hasMarketing && !hasConsent) {
+  if (isViolating) {
     const penaltyVal = 15;
     score -= penaltyVal;
+    
+    const label = !consent.hasConsentIndicator 
+      ? 'GDPR/CCPA Prior Consent Violation' 
+      : 'GDPR/CCPA Consent Denied Violation';
+      
+    const desc = !consent.hasConsentIndicator
+      ? `Marketing/tracking cookies were stored before consent was obtained: ${foundMarketingCookies.slice(0, 5).join(', ')}. No consent platform (CMP) cookie found.`
+      : `Marketing/tracking cookies (${foundMarketingCookies.slice(0, 5).join(', ')}) were set despite user explicitly denying consent in ${consent.cmp}.`;
+
     penalties.push({
       type: 'high',
-      label: 'GDPR/CCPA Prior Consent Violation',
-      desc: `Marketing/tracking cookies were stored before consent was obtained: ${foundMarketingCookies.join(', ')}. No consent platform (CMP) cookie found.`,
+      label: label,
+      desc: desc,
       penalty: penaltyVal,
       status: '🔴 Red'
     });

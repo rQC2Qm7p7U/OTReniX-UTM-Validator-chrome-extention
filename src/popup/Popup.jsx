@@ -27,6 +27,7 @@ export default function Popup() {
     customB2BKeys,
     webhookLogs,
     isLoading,
+    storages,
     loadSettings,
     toggleSandboxMode,
     clearWebhookLogs,
@@ -419,6 +420,7 @@ export default function Popup() {
           healthScore={healthScore}
           forms={forms}
           cookies={cookies}
+          storages={storages}
           redirects={redirects}
           screenshotUrl={screenshotUrl}
           analyticsStatus={analyticsStatus}

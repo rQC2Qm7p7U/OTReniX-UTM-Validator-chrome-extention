@@ -120,10 +120,11 @@ function parseForm(form, isShadow = false) {
   };
 }
 
-// Only capture storage keys relevant to UTM / analytics attribution
+// Only capture storage keys relevant to UTM / analytics attribution & privacy consent
 const UTM_STORAGE_PREFIXES = [
   'utm_', 'sf_utm_', '_ga', '_ym', 'gclid', 'li_fat', 'hubspot',
-  'wbraid', 'gbraid', 'yclid', 'mkto', '_fbp', '_fbc', 'ttclid', 'pi_opt'
+  'wbraid', 'gbraid', 'yclid', 'mkto', '_fbp', '_fbc', 'ttclid', 'pi_opt',
+  'consent', 'cookie', 'gdpr', 'ccpa', 'klaro'
 ];
 
 function isRelevantStorageKey(key) {

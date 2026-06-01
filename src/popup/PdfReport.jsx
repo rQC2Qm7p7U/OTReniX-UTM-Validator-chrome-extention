@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 import { Zap, CheckCircle2 } from 'lucide-react';
-import { DEFAULT_B2B_KEYS } from './store';
+import { DEFAULT_B2B_KEYS, evaluateConsentState } from './store';
 
 const PdfReport = forwardRef(({
   whiteLabel,
@@ -8,6 +8,7 @@ const PdfReport = forwardRef(({
   healthScore = 100,
   forms = [],
   cookies = [],
+  storages = { local: {}, session: {} },
   redirects = [],
   screenshotUrl,
   analyticsStatus = {},
@@ -23,39 +24,30 @@ const PdfReport = forwardRef(({
 
   const consentCompliance = React.useMemo(() => {
     const list = cookies || [];
-    const MARKETING_COOKIE_PATTERNS = ['_ga', '_gid', '_gat', '_gcl_au', '_ym_uid', '_ym_d', '_ym_isad', '_fbp', '_fbc', '_ttp', 'hubspotutk', '_mkto_trk', 'pi_opt_in'];
-    const CONSENT_COOKIE_PATTERNS = ['optanonconsent', 'optanonalertboxclosed', 'cookieconsent', 'cookieyes-consent', 'cookieconsent_status', 'euconsent-v2', 'gdpr_consent', 'ccpa-consent'];
+    const MARKETING_COOKIE_PATTERNS = [
+      '_ga', '_gid', '_gat', '_gcl_au', '_gcl_aw', '_gac_', '_ym_uid', '_ym_d', '_ym_isad', 
+      '_fbp', '_fbc', '_ttp', 'hubspotutk', '_mkto_trk', 'pi_opt_in',
+      'usermatchhistory', 'li_sugr', 'analyticsynchistory', 'li_fat_id',
+      '_clck', '_clsk', '_hjsessionuser_', '_hjsession_', 'prism_', '_pin_unauth', 'personalization_id'
+    ];
 
     const foundMarketing = list
       .filter(c => MARKETING_COOKIE_PATTERNS.some(pat => c.name.toLowerCase().includes(pat)))
       .map(c => c.name);
-    const foundConsent = list
-      .filter(c => CONSENT_COOKIE_PATTERNS.some(pat => c.name.toLowerCase().includes(pat)))
-      .map(c => c.name);
 
     const hasMarketing = foundMarketing.length > 0;
-    const hasConsent = foundConsent.length > 0;
-
-    let cmpName = null;
-    if (hasConsent) {
-      const consentLower = foundConsent[0].toLowerCase();
-      if (consentLower.includes('optanon')) cmpName = 'OneTrust';
-      else if (consentLower.includes('cookiebot') || consentLower === 'cookieconsent') cmpName = 'Cookiebot';
-      else if (consentLower.includes('cookieyes')) cmpName = 'CookieYes';
-      else cmpName = 'Generic CMP';
-    }
-
-    const isViolating = hasMarketing && !hasConsent;
+    const consent = evaluateConsentState(cookies, storages?.local, storages?.session);
+    const isViolating = (hasMarketing && !consent.hasConsentIndicator) || (hasMarketing && consent.hasConsentIndicator && !consent.isGranted);
 
     return {
       hasMarketing,
-      hasConsent,
+      hasConsent: consent.hasConsentIndicator,
+      isConsentGranted: consent.isGranted,
       foundMarketing,
-      foundConsent,
-      cmpName,
+      cmpName: consent.cmp,
       isViolating
     };
-  }, [cookies]);
+  }, [cookies, storages]);
 
   const allKeys = React.useMemo(() => {
     return [...new Set([...DEFAULT_B2B_KEYS, ...customB2BKeys])];
@@ -161,9 +153,11 @@ const PdfReport = forwardRef(({
               <span className="font-bold uppercase tracking-wider text-[8.5px]">GDPR / CCPA Cookie Audit Status</span>
               <span className="text-[9.5px] text-slate-300">
                 {consentCompliance.isViolating 
-                  ? `Prior consent violation! Marketing cookies (${consentCompliance.foundMarketing.slice(0, 3).join(', ')}) set without consent cookie.`
+                  ? consentCompliance.hasConsent
+                    ? `Consent denied! Marketing cookies (${consentCompliance.foundMarketing.slice(0, 3).join(', ')}) were set despite user explicitly denying consent in ${consentCompliance.cmpName}.`
+                    : `Prior consent violation! Marketing cookies (${consentCompliance.foundMarketing.slice(0, 3).join(', ')}) set without consent cookie/storage key.`
                   : consentCompliance.cmpName 
-                    ? `Compliant. Consent manager cookie detected (${consentCompliance.cmpName}).` 
+                    ? `Compliant. Consent manager detected (${consentCompliance.cmpName}) with valid user consent.` 
                     : 'Compliant. No tracking cookies detected without user consent.'
                 }
               </span>
