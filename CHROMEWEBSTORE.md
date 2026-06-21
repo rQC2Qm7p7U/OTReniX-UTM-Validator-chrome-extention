@@ -106,6 +106,7 @@ https://otrenix.com
 
 | Version | Date | Changes | Status |
 |---------|------|---------|--------|
+| v3.5.4 | 2026-06-21 | Resolved CWS rejection regarding remotely hosted code by loading inject.js natively via Manifest V3 MAIN world content scripts instead of dynamic script injection. | Draft |
 | v3.5.0 | 2026-05-31 | Implemented AI Patch Assistant with Chrome window.ai Prompt API support, remote Gemini API integrations, dynamic minimized prompt copying, and skeleton code loaders. | Draft |
 | v3.4.0 | 2026-05-31 | Integrated GDPR/CCPA Cookie Consent audit, flagging tracking cookies stored prior to consent, and added visual status indicators on Dashboard and PDF exports. | Published |
 | v3.3.0 | 2026-05-31 | Added Marketo & Pardot tracking support, optimized popup footprint, separated modular panels, and upgraded reports to dynamic-height PDF pagination. | Published |

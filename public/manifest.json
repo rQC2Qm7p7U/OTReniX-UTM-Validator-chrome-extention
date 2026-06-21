@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Dynamic UTM & Lead Source Validator",
-  "version": "3.5.3",
+  "version": "3.5.4",
   "description": "Audit web forms, track redirect chains, and simulate UTM submissions to n8n/Google Apps Script for B2B.",
   "permissions": [
     "tabs",
@@ -23,6 +23,13 @@
       "js": ["content.js"],
       "run_at": "document_start",
       "all_frames": true
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["inject.js"],
+      "run_at": "document_start",
+      "all_frames": false,
+      "world": "MAIN"
     }
   ],
   "action": {
@@ -34,11 +41,5 @@
   "options_ui": {
     "page": "src/options/index.html",
     "open_in_tab": true
-  },
-  "web_accessible_resources": [
-    {
-      "resources": ["inject.js"],
-      "matches": ["<all_urls>"]
-    }
-  ]
+  }
 }

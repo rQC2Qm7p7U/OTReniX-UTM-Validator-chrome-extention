@@ -500,15 +500,3 @@ function handleAnalyticsDiagnostics(event) {
   }
 }
 document.addEventListener('ANALYTICS_DIAGNOSTICS', handleAnalyticsDiagnostics);
-
-// Inject diagnostics script into page context (Main World)
-if (window.self === window.top) {
-  try {
-    const script = document.createElement('script');
-    script.src = chrome.runtime.getURL('inject.js');
-    script.onload = () => script.remove();
-    (document.head || document.documentElement).appendChild(script);
-  } catch (e) {
-    console.warn('[UTM Validator] Failed to inject diagnostics script:', e);
-  }
-}
